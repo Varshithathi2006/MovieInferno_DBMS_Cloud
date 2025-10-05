@@ -6,7 +6,7 @@ from datetime import datetime
 # --- CONFIGURATION ---
 # Replace with your actual credentials
 TMDB_API_KEY = "df540dc7eced57f912edf1ef5c88ebda"  # Replace with your key
-DB_NAME = "movie-inferno-db"
+DB_NAME = "postgres"
 DB_USER = "postgres"
 DB_PASSWORD = "Mittu@20162005"  # Replace with your Supabase/Postgres password
 DB_HOST = "db.ajnkisostsjhoqfyjsqu.supabase.co"          # e.g., "aws-0-us-east-1.pooler.supabase.com"

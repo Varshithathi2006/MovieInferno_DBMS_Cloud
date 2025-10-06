@@ -41,7 +41,7 @@ export default function TVShowDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-black">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
           <LoadingSpinner size="lg" />
@@ -53,13 +53,13 @@ export default function TVShowDetailsPage() {
 
   if (error || !show) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-black">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">TV Show not found</h1>
-            <p className="text-muted-foreground mb-8">{error || "The TV show you're looking for doesn't exist."}</p>
-            <Button asChild>
+          <div className="text-center border border-red-500 rounded-lg p-8 bg-gray-900">
+            <h1 className="text-2xl font-bold text-white mb-4">TV Show not found</h1>
+            <p className="text-red-300 mb-8">{error || "The TV show you're looking for doesn't exist."}</p>
+            <Button asChild className="bg-red-600 hover:bg-red-700 text-white border border-white">
               <Link href="/tv">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to TV Shows
@@ -76,7 +76,7 @@ export default function TVShowDetailsPage() {
   const rating = show.vote_average ? show.vote_average.toFixed(1) : "N/A"
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       <Navbar />
 
       {/* Hero Section */}
@@ -89,12 +89,12 @@ export default function TVShowDetailsPage() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/70 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <Button variant="ghost" asChild className="mb-8 text-white hover:bg-white/20">
+          <Button variant="ghost" asChild className="mb-8 text-white hover:bg-red-600/20 border border-red-500 hover:border-white">
             <Link href="/tv">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to TV Shows
@@ -117,15 +117,15 @@ export default function TVShowDetailsPage() {
             {/* TV Show Info */}
             <div className="flex-1 text-white">
               <div className="mb-4">
-                <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30 mb-4">
-                  <Star className="w-3 h-3 mr-1 fill-accent" />
+                <Badge variant="secondary" className="bg-red-600 text-white border border-white mb-4">
+                  <Star className="w-3 h-3 mr-1 fill-white" />
                   {rating}
                 </Badge>
               </div>
 
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-balance">{show.name}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-balance text-white">{show.name}</h1>
 
-              <div className="flex flex-wrap items-center gap-6 mb-6 text-gray-300">
+              <div className="flex flex-wrap items-center gap-6 mb-6 text-red-300">
                 <div className="flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
                   {releaseYear}
@@ -136,17 +136,17 @@ export default function TVShowDetailsPage() {
                 </div>
               </div>
 
-              <p className="text-lg text-gray-200 mb-8 text-pretty leading-relaxed">{show.overview}</p>
+              <p className="text-lg text-white mb-8 text-pretty leading-relaxed">{show.overview}</p>
 
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white border border-white">
                   <Play className="w-5 h-5 mr-2" />
                   Watch Trailer
                 </Button>
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-white/30 text-white hover:bg-white/10 bg-transparent"
+                  className="border-red-500 text-white hover:bg-red-600 bg-transparent hover:border-white"
                 >
                   <Bookmark className="w-5 h-5 mr-2" />
                   Add to Watchlist

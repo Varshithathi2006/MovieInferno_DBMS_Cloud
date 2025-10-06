@@ -2,27 +2,58 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Search, Menu, X, Film } from "lucide-react"
+import { Search, Menu, X, Film, User, LogOut, Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { supabase } from "@/lib/supabaseClient"
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   const navItems = [
     { name: "Home", href: "/" },
     { name: "Movies", href: "/movies" },
     { name: "TV Shows", href: "/tv" },
     { name: "Genres", href: "/genres" },
-    { name: "SignUp", href: "/signup" },
-    { name: "login", href: "/login" },
-
+    { name: "Watchlist", href: "/watchlist", icon: Bookmark },
   ]
+
+  const authItems = user 
+    ? [
+        { name: "Profile", href: "/profile", icon: User },
+        { name: "Sign Out", href: "#", onClick: handleSignOut, icon: LogOut },
+      ]
+    : [
+        { name: "Sign Up", href: "/signup" },
+        { name: "Login", href: "/login" },
+      ]
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,10 +87,32 @@ export function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-foreground hover:text-accent transition-colors duration-200 font-medium"
+                className="text-foreground hover:text-accent transition-colors duration-200 font-medium flex items-center space-x-1"
               >
-                {item.name}
+                {item.icon && <item.icon className="h-4 w-4" />}
+                <span>{item.name}</span>
               </Link>
+            ))}
+            {!loading && authItems.map((item) => (
+              item.onClick ? (
+                <button
+                  key={item.name}
+                  onClick={item.onClick}
+                  className="text-foreground hover:text-accent transition-colors duration-200 font-medium flex items-center space-x-1"
+                >
+                  {item.icon && <item.icon className="h-4 w-4" />}
+                  <span>{item.name}</span>
+                </button>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-foreground hover:text-accent transition-colors duration-200 font-medium flex items-center space-x-1"
+                >
+                  {item.icon && <item.icon className="h-4 w-4" />}
+                  <span>{item.name}</span>
+                </Link>
+              )
             ))}
           </div>
 
@@ -97,8 +150,40 @@ export function Navbar() {
                   className="block px-3 py-2 text-foreground hover:text-accent transition-colors duration-200"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.name}
+                  <div className="flex items-center space-x-2">
+                    {item.icon && <item.icon className="h-4 w-4" />}
+                    <span>{item.name}</span>
+                  </div>
                 </Link>
+              ))}
+              {!loading && authItems.map((item) => (
+                item.onClick ? (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      item.onClick?.()
+                      setIsMenuOpen(false)
+                    }}
+                    className="block w-full text-left px-3 py-2 text-foreground hover:text-accent transition-colors duration-200"
+                  >
+                    <div className="flex items-center space-x-2">
+                      {item.icon && <item.icon className="h-4 w-4" />}
+                      <span>{item.name}</span>
+                    </div>
+                  </button>
+                ) : (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="block px-3 py-2 text-foreground hover:text-accent transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {item.icon && <item.icon className="h-4 w-4" />}
+                      <span>{item.name}</span>
+                    </div>
+                  </Link>
+                )
               ))}
               <div className="px-3 py-2">
                 <form onSubmit={handleSearch} className="relative">

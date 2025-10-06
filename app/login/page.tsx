@@ -21,7 +21,7 @@ export default function LoginPage() {
       alert(error.message);
     } else {
       alert("Welcome back!");
-      router.push("/movies");
+      router.push("/");
     }
   };
 

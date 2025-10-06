@@ -28,13 +28,13 @@ export function TVSlider({ title, shows, className = "" }: TVSliderProps) {
   return (
     <section className={`${className}`}>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-foreground text-balance">{title}</h2>
+        <h2 className="text-2xl font-bold text-red-400 text-balance">{title}</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => scroll("left")}
-            className="border-border hover:bg-accent hover:text-accent-foreground"
+            className="border-red-500 text-white hover:bg-red-600 hover:text-white bg-black hover:border-white"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -42,7 +42,7 @@ export function TVSlider({ title, shows, className = "" }: TVSliderProps) {
             variant="outline"
             size="sm"
             onClick={() => scroll("right")}
-            className="border-border hover:bg-accent hover:text-accent-foreground"
+            className="border-red-500 text-white hover:bg-red-600 hover:text-white bg-black hover:border-white"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>

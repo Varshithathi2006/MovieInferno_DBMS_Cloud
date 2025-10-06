@@ -1,119 +1,272 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
-import { TVSlider } from "@/components/tv-slider"
-import { LoadingSpinner } from "@/components/loading-spinner"
-import { Button } from "@/components/ui/button"
-import { tvApi, type TVShow } from "@/services/api"
-import { Tv } from "lucide-react"
+import { useState, useEffect } from 'react';
+import { tvApi } from '@/services/api';
+import { TVShow } from '@/types/api';
+import Image from 'next/image';
+import Link from 'next/link';
 
-export default function TVShowsPage() {
-  const [trendingShows, setTrendingShows] = useState<TVShow[]>([])
-  const [popularShows, setPopularShows] = useState<TVShow[]>([])
-  const [topRatedShows, setTopRatedShows] = useState<TVShow[]>([])
-  const [airingTodayShows, setAiringTodayShows] = useState<TVShow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isApiKeyMissing, setIsApiKeyMissing] = useState(false)
+interface Genre {
+  id: number;
+  name: string;
+}
+
+export default function TVPage() {
+  const [popularShows, setPopularShows] = useState<TVShow[]>([]);
+  const [topRatedShows, setTopRatedShows] = useState<TVShow[]>([]);
+  const [onTheAirShows, setOnTheAirShows] = useState<TVShow[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'popular' | 'top_rated' | 'on_the_air'>('popular');
+  const [selectedGenre, setSelectedGenre] = useState<number | null>(null);
+  const [filteredShows, setFilteredShows] = useState<TVShow[]>([]);
 
   useEffect(() => {
     const fetchTVShows = async () => {
       try {
-        setLoading(true)
-        setError(null)
-        const [trending, popular, topRated, airingToday] = await Promise.all([
-          tvApi.getTrending(),
+        setLoading(true);
+        setError(null);
+        
+        const [popularData, topRatedData, onTheAirData, genresResponse] = await Promise.all([
           tvApi.getPopular(),
           tvApi.getTopRated(),
-          tvApi.getAiringToday(),
-        ])
-
-        setTrendingShows(trending.results)
-        setPopularShows(popular.results)
-        setTopRatedShows(topRated.results)
-        setAiringTodayShows(airingToday.results)
+          tvApi.getOnTheAir(),
+          fetch('/api/genres?type=tv').then(res => res.json())
+        ]);
+        
+        setPopularShows(popularData.results);
+        setTopRatedShows(topRatedData.results);
+        setOnTheAirShows(onTheAirData.results);
+        setGenres(genresResponse);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
-
-        if (errorMessage.includes("API key not configured") || errorMessage.includes("Invalid TMDB API key")) {
-          console.warn("API key missing, but mock data should be available")
-          setError("Unable to load TV show data. Please check your configuration.")
-        } else {
-          setError("Failed to load TV shows. Please try again later.")
-        }
-        console.error("Error fetching TV shows:", err)
+        setError('Failed to fetch TV shows. Please try again later.');
+        console.error('Error fetching TV shows:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchTVShows()
-  }, [])
+    fetchTVShows();
+  }, []);
+
+  useEffect(() => {
+    const filterShowsByGenre = () => {
+      const currentShows = getCurrentShows();
+      if (selectedGenre === null) {
+        setFilteredShows(currentShows);
+      } else {
+        const filtered = currentShows.filter(show => 
+          show.genre_ids && show.genre_ids.includes(selectedGenre)
+        );
+        setFilteredShows(filtered);
+      }
+    };
+
+    filterShowsByGenre();
+  }, [activeTab, selectedGenre, popularShows, topRatedShows, onTheAirShows]);
+
+  const getCurrentShows = () => {
+    switch (activeTab) {
+      case 'popular':
+        return popularShows;
+      case 'top_rated':
+        return topRatedShows;
+      case 'on_the_air':
+        return onTheAirShows;
+      default:
+        return popularShows;
+    }
+  };
+
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case 'popular':
+        return 'Popular TV Shows';
+      case 'top_rated':
+        return 'Top Rated TV Shows';
+      case 'on_the_air':
+        return 'Currently Airing TV Shows';
+      default:
+        return 'Popular TV Shows';
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <LoadingSpinner size="lg" />
+      <div className="min-h-screen bg-black text-white p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p>Loading TV shows...</p>
         </div>
-        <Footer />
       </div>
-    )
+    );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center space-y-6">
-            <>
-              <h1 className="text-2xl font-bold text-foreground mb-4">Something went wrong</h1>
-              <p className="text-muted-foreground">{error}</p>
-              <Button onClick={() => window.location.reload()} className="mt-4">
-                Try Again
-              </Button>
-            </>
-          </div>
+      <div className="min-h-screen bg-black text-white p-8">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️ {error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors border border-white"
+          >
+            Try Again
+          </button>
         </div>
-        <Footer />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
+    <div className="min-h-screen bg-black text-white p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold mb-8">TV Shows</h1>
+        
+        {/* Tab Navigation */}
+        <div className="flex space-x-1 mb-8 bg-gray-900 border border-red-500 p-1 rounded-lg w-fit">
+          <button
+            onClick={() => setActiveTab('popular')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              activeTab === 'popular' 
+                ? 'bg-red-600 text-white border border-white' 
+                : 'text-white hover:text-red-300 hover:bg-gray-800'
+            }`}
+          >
+            Popular
+          </button>
+          <button
+            onClick={() => setActiveTab('top_rated')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              activeTab === 'top_rated' 
+                ? 'bg-red-600 text-white border border-white' 
+                : 'text-white hover:text-red-300 hover:bg-gray-800'
+            }`}
+          >
+            Top Rated
+          </button>
+          <button
+            onClick={() => setActiveTab('on_the_air')}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              activeTab === 'on_the_air' 
+                ? 'bg-red-600 text-white border border-white' 
+                : 'text-white hover:text-red-300 hover:bg-gray-800'
+            }`}
+          >
+            On The Air
+          </button>
+        </div>
 
-      {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-accent/10 rounded-full">
-              <Tv className="h-12 w-12 text-accent" />
-            </div>
+        {/* Genre Filter */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 text-red-400">Filter by Genre</h3>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedGenre(null)}
+              className={`px-3 py-1 rounded-full text-sm transition-colors border ${
+                selectedGenre === null
+                  ? 'bg-red-600 text-white border-white'
+                  : 'bg-gray-900 text-white border-red-500 hover:bg-red-900 hover:border-white'
+              }`}
+            >
+              All Genres
+            </button>
+            {genres.map((genre) => (
+              <button
+                key={genre.id}
+                onClick={() => setSelectedGenre(genre.id)}
+                className={`px-3 py-1 rounded-full text-sm transition-colors border ${
+                  selectedGenre === genre.id
+                    ? 'bg-red-600 text-white border-white'
+                    : 'bg-gray-900 text-white border-red-500 hover:bg-red-900 hover:border-white'
+                }`}
+              >
+                {genre.name}
+              </button>
+            ))}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4 text-balance">TV Shows</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Discover the latest and greatest television series from around the world
+        </div>
+
+        {/* Content Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold text-red-400">{getTabTitle()}</h2>
+          <p className="text-white mt-1">
+            {filteredShows.length} shows available
+            {selectedGenre && (
+              <span className="ml-2 text-red-300">
+                • Filtered by {genres.find(g => g.id === selectedGenre)?.name}
+              </span>
+            )}
           </p>
         </div>
-      </div>
-
-      {/* TV Show Sections */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-12 pb-16">
-          <TVSlider title="Trending This Week" shows={trendingShows} />
-          <TVSlider title="Popular TV Shows" shows={popularShows} />
-          <TVSlider title="Top Rated" shows={topRatedShows} />
-          <TVSlider title="Airing Today" shows={airingTodayShows} />
+        
+        {/* TV Shows Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {filteredShows.map((show) => (
+            <div key={show.id} className="bg-gray-900 border border-red-500 rounded-lg overflow-hidden shadow-lg hover:shadow-xl hover:shadow-red-500/20 transition-all duration-300 hover:scale-105 hover:border-white">
+              <div className="relative aspect-[2/3]">
+                {show.poster_path ? (
+                  <Image
+                    src={`https://image.tmdb.org/t/p/w500${show.poster_path}`}
+                    alt={show.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-black flex items-center justify-center border border-red-500">
+                    <span className="text-red-400">No Image</span>
+                  </div>
+                )}
+                {/* Rating Badge */}
+                <div className="absolute top-2 right-2 bg-red-600 border border-white text-white px-2 py-1 rounded-md text-sm font-semibold">
+                  ⭐ {show.vote_average.toFixed(1)}
+                </div>
+              </div>
+              <div className="p-4 bg-black">
+                <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-white hover:text-red-400 transition-colors">
+                  {show.name}
+                </h3>
+                <p className="text-red-300 text-sm mb-3">
+                  {show.first_air_date ? new Date(show.first_air_date).getFullYear() : 'N/A'}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-white text-xs">
+                    {show.vote_count} votes
+                  </span>
+                  <Link
+                    href={`/tv/${show.id}`}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm transition-colors border border-white hover:border-red-300"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </main>
 
-      <Footer />
+        {/* Empty State */}
+        {filteredShows.length === 0 && (
+          <div className="text-center py-12 border border-red-500 rounded-lg bg-gray-900">
+            <p className="text-white text-lg">
+              {selectedGenre 
+                ? `No TV shows found in the ${genres.find(g => g.id === selectedGenre)?.name} genre.`
+                : 'No TV shows found.'
+              }
+            </p>
+            {selectedGenre && (
+              <button
+                onClick={() => setSelectedGenre(null)}
+                className="mt-4 text-red-400 hover:text-white underline border border-red-500 px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+              >
+                Clear filter
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
-  )
+  );
 }

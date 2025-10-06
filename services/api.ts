@@ -330,7 +330,6 @@ export const getImageUrl = (path: string | null, size = "w500"): string => {
 async function fetchFromAPI<T>(endpoint: string): Promise<T> {
   // Check if API key is configured
   if (!API_KEY || API_KEY === "demo_key") {
-    console.log("[v0] No TMDB API key configured, using mock data")
 
     // Return mock data for various endpoints
     if (

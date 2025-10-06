@@ -3,7 +3,7 @@
 import { supabase } from "../../../lib/supabaseClient";
 
 // NOTE: Use your established test ID or fetch the real user ID securely
-const TEST_USER_ID = '00a4d6a7-4f64-41b1-ba41-1e0acc587677'; 
+const TEST_USER_ID = '391e8f63-7464-4c47-9fd3-97348a0587af'; 
 
 export async function POST(request) {
     try {

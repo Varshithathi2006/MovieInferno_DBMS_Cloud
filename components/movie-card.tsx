@@ -4,21 +4,12 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Star, Calendar, Bookmark, BookmarkCheck } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { getImageUrl } from "@/services/api"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { getImageUrl, type Movie } from "@/services/api"
 import { supabase } from "@/lib/supabaseClient"
-
-// NOTE: This interface should ideally be imported from a central types file.
-interface Movie {
-  id: number;
-  title: string;
-  poster_path: string | null;
-  release_date: string | null;
-  vote_average: number | null;
-  overview: string | null;
-}
+import { useWatchlist } from "@/hooks/use-watchlist"
 
 interface MovieCardProps {
   movie: Movie;
@@ -26,41 +17,21 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie, className = "" }: MovieCardProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading } = useWatchlist(user?.id);
   
   const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : "TBA";
   const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
 
-  // Check user authentication and watchlist status
+  // Check user authentication
   useEffect(() => {
-    const checkUserAndWatchlist = async () => {
+    const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await checkWatchlistStatus(session.user.id);
-      }
     };
     
-    checkUserAndWatchlist();
-  }, [movie.id]);
-
-  const checkWatchlistStatus = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/watchlist?user_id=${userId}`);
-      if (response.ok) {
-        const watchlist = await response.json();
-        const isInList = watchlist.some((item: any) => 
-          item.tmdb_id === movie.id && item.media_type === 'movie'
-        );
-        setIsInWatchlist(isInList);
-      }
-    } catch (error) {
-      console.error('Error checking watchlist status:', error);
-    }
-  };
+    checkUser();
+  }, []);
 
   const handleWatchlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,54 +42,20 @@ export function MovieCard({ movie, className = "" }: MovieCardProps) {
       return;
     }
 
-    setIsLoading(true);
-    
-    try {
-      if (isInWatchlist) {
-        // Remove from watchlist
-        const response = await fetch('/api/watchlist', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            user_id: user.id,
-            tmdb_id: movie.id,
-            media_type: 'movie'
-          }),
-        });
+    const inWatchlist = isInWatchlist(movie.id, 'movie');
 
-        if (response.ok) {
-          setIsInWatchlist(false);
-        } else {
-          throw new Error('Failed to remove from watchlist');
-        }
-      } else {
-        // Add to watchlist
-        const response = await fetch('/api/watchlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: user.id,
-            tmdb_id: movie.id,
-            media_type: 'movie',
-            title: movie.title,
-            poster_path: movie.poster_path,
-            release_date: movie.release_date,
-            vote_average: movie.vote_average,
-            overview: movie.overview
-          }),
-        });
-
-        if (response.ok) {
-          setIsInWatchlist(true);
-        } else {
-          throw new Error('Failed to add to watchlist');
-        }
-      }
-    } catch (error) {
-      console.error('Watchlist Error:', error);
-      alert('❌ Could not update watchlist. Please try again.');
-    } finally {
-      setIsLoading(false);
+    if (inWatchlist) {
+      await removeFromWatchlist(movie.id, 'movie');
+    } else {
+      await addToWatchlist({
+        tmdb_id: movie.id,
+        media_type: 'movie',
+        title: movie.title,
+        poster_path: movie.poster_path,
+        release_date: movie.release_date,
+        vote_average: movie.vote_average || 0,
+        overview: movie.overview
+      });
     }
   };
 
@@ -152,13 +89,13 @@ export function MovieCard({ movie, className = "" }: MovieCardProps) {
             <Button 
                 onClick={handleWatchlistToggle}
                 disabled={isLoading}
-                variant={isInWatchlist ? "secondary" : "default"}
-                className={`w-full border border-white ${isInWatchlist ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+                variant={isInWatchlist(movie.id, 'movie') ? "secondary" : "default"}
+                className={`w-full border border-white ${isInWatchlist(movie.id, 'movie') ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
                 size="sm"
             >
                 {isLoading ? (
                   'Loading...'
-                ) : isInWatchlist ? (
+                ) : isInWatchlist(movie.id, 'movie') ? (
                   <>
                     <BookmarkCheck className="w-4 h-4 mr-2" />
                     In Watchlist

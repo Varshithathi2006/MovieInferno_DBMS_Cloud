@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bookmark, BookmarkX, Film, Tv, Calendar, Star, Trash2, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { useWatchlist } from '@/hooks/use-watchlist';
 
 interface WatchlistItem {
   id: string;
@@ -20,64 +21,24 @@ interface WatchlistItem {
 }
 
 export default function WatchlistPage() {
-  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [filter, setFilter] = useState<'all' | 'movie' | 'tv'>('all');
-  const [sortBy, setSortBy] = useState<'date_added' | 'title' | 'rating'>('date_added');
-  const router = useRouter();
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'rating'>('date');
+  
+  const { watchlistItems, removeFromWatchlist, loading, error } = useWatchlist(user?.id);
 
   useEffect(() => {
-    // Check authentication
-    const checkAuth = async () => {
+    const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/login');
         return;
       }
       setUser(session.user);
-      fetchWatchlist(session.user.id);
     };
-
-    checkAuth();
+    checkUser();
   }, [router]);
-
-  const fetchWatchlist = async (userId: string) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/watchlist?user_id=${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch watchlist');
-      
-      const data = await response.json();
-      setWatchlistItems(data);
-    } catch (err) {
-      setError('Failed to load watchlist');
-      console.error('Error fetching watchlist:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeFromWatchlist = async (itemId: string) => {
-    try {
-      const response = await fetch('/api/watchlist', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: itemId }),
-      });
-
-      if (!response.ok) throw new Error('Failed to remove from watchlist');
-
-      // Update local state
-      setWatchlistItems(prev => prev.filter(item => item.id !== itemId));
-    } catch (err) {
-      console.error('Error removing from watchlist:', err);
-      alert('Failed to remove item from watchlist');
-    }
-  };
 
   const filteredItems = watchlistItems.filter(item => {
     if (filter === 'all') return true;
@@ -230,7 +191,7 @@ export default function WatchlistPage() {
                     />
                   </Link>
                   <button
-                    onClick={() => removeFromWatchlist(item.id)}
+                    onClick={() => removeFromWatchlist(item.tmdb_id, item.media_type)}
                     className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 p-2 rounded-full transition-colors opacity-0 group-hover:opacity-100 border border-white"
                     title="Remove from watchlist"
                   >

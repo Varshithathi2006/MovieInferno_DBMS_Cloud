@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ChevronLeft, ChevronRight, Play, Info, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { TrailerModal } from "@/components/trailer-modal"
 import { getImageUrl, type Movie } from "@/services/api"
 
 interface HeroCarouselProps {
@@ -14,6 +15,7 @@ interface HeroCarouselProps {
 
 export function HeroCarousel({ movies }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false)
 
   useEffect(() => {
     if (movies.length === 0) return
@@ -67,7 +69,11 @@ export function HeroCarousel({ movies }: HeroCarouselProps) {
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 text-balance">{currentMovie.title}</h1>
             <p className="text-lg text-gray-200 mb-8 line-clamp-3 text-pretty">{currentMovie.overview}</p>
             <div className="flex flex-wrap gap-4">
-              <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              <Button 
+                size="lg" 
+                className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                onClick={() => setIsTrailerModalOpen(true)}
+              >
                 <Play className="w-5 h-5 mr-2" />
                 Watch Trailer
               </Button>
@@ -117,6 +123,15 @@ export function HeroCarousel({ movies }: HeroCarouselProps) {
           />
         ))}
       </div>
+
+      {/* Trailer Modal */}
+      <TrailerModal
+        contentId={currentMovie.id}
+        contentTitle={currentMovie.title}
+        contentType="movie"
+        isOpen={isTrailerModalOpen}
+        onClose={() => setIsTrailerModalOpen(false)}
+      />
     </section>
   )
 }

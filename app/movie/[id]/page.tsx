@@ -10,6 +10,7 @@ import { Footer } from "@/components/footer"
 import { MovieSlider } from "@/components/movie-slider"
 import { CastSlider } from "@/components/cast-slider"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { TrailerModal } from "@/components/trailer-modal"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { movieApi, getImageUrl, type Movie, type Credits } from "@/services/api"
@@ -40,6 +41,7 @@ export default function MovieDetailsPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isApiKeyMissing, setIsApiKeyMissing] = useState(false)
+    const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false)
 
     const fetchMovieData = useCallback(async () => {
         try {
@@ -135,9 +137,74 @@ export default function MovieDetailsPage() {
                     </Button>
 
                     <div className="flex flex-col lg:flex-row gap-8">
-                        {/* Movie Poster & Info JSX */}
-                        {/* The code below is using the defined MovieData type and will resolve the errors */}
-                        {/* ... (Rest of the Hero/Info JSX) ... */}
+                        {/* Movie Poster */}
+                        <div className="flex-shrink-0">
+                            <Image
+                                src={getImageUrl(movie.poster_path) || "/placeholder.svg"}
+                                alt={movie.title || "Movie Poster"}
+                                width={300}
+                                height={450}
+                                className="rounded-lg shadow-2xl"
+                                priority
+                            />
+                        </div>
+
+                        {/* Movie Info */}
+                        <div className="flex-1 text-white">
+                            <h1 className="text-4xl md:text-5xl font-bold mb-2">{movie.title}</h1>
+                            {movie.tagline && (
+                                <p className="text-xl text-gray-300 italic mb-4">{movie.tagline}</p>
+                            )}
+                            
+                            <div className="flex flex-wrap items-center gap-4 mb-6">
+                                <Badge variant="secondary" className="bg-accent/20 text-accent border-accent/30">
+                                    <Star className="w-3 h-3 mr-1 fill-accent" />
+                                    {rating}
+                                </Badge>
+                                <Badge variant="outline" className="border-white/30 text-white">
+                                    <Calendar className="w-3 h-3 mr-1" />
+                                    {releaseYear}
+                                </Badge>
+                                <Badge variant="outline" className="border-white/30 text-white">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {runtime}
+                                </Badge>
+                            </div>
+
+                            {movie.genres && movie.genres.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-6">
+                                    {movie.genres.map((genre) => (
+                                        <Badge key={genre.id} variant="outline" className="border-white/30 text-white">
+                                            {genre.name}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            )}
+
+                            {movie.overview && (
+                                <p className="text-lg text-gray-200 mb-8 leading-relaxed">{movie.overview}</p>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-wrap gap-4">
+                                <Button 
+                                    size="lg" 
+                                    className="bg-accent hover:bg-accent/90 text-accent-foreground"
+                                    onClick={() => setIsTrailerModalOpen(true)}
+                                >
+                                    <Play className="w-5 h-5 mr-2" />
+                                    Watch Trailer
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    size="lg"
+                                    className="border-white/30 text-white hover:bg-white/10 bg-transparent"
+                                >
+                                    <Bookmark className="w-5 h-5 mr-2" />
+                                    Add to Watchlist
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -171,6 +238,15 @@ export default function MovieDetailsPage() {
             </main>
 
             <Footer />
+            
+            {/* Trailer Modal */}
+            <TrailerModal
+                contentId={movie?.id}
+                contentTitle={movie?.title || ""}
+                contentType="movie"
+                isOpen={isTrailerModalOpen}
+                onClose={() => setIsTrailerModalOpen(false)}
+            />
         </div>
     )
 };

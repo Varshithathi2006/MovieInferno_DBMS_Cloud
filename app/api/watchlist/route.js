@@ -11,6 +11,7 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
+    // Check if the table has the new structure or old structure
     const { data, error } = await supabase
       .from('watchlist')
       .select('*')
@@ -21,7 +22,48 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Failed to fetch watchlist' }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    // Transform old structure and fetch TMDB details
+    const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
+    const API_BASE_URL = 'https://api.themoviedb.org/3';
+
+    const enrichedData = await Promise.all(
+      data.map(async (item) => {
+        // The existing table structure has movie_id field
+        // Positive values are movies, negative values are TV shows
+        const isMovie = item.movie_id > 0;
+        const tmdbId = Math.abs(item.movie_id);
+        const mediaType = isMovie ? 'movie' : 'tv';
+
+        // Fetch details from TMDB
+        let tmdbDetails = null;
+        try {
+          const tmdbResponse = await fetch(
+            `${API_BASE_URL}/${mediaType}/${tmdbId}?api_key=${API_KEY}`
+          );
+          if (tmdbResponse.ok) {
+            tmdbDetails = await tmdbResponse.json();
+          }
+        } catch (tmdbError) {
+          console.error('Error fetching TMDB details:', tmdbError);
+        }
+
+        return {
+          id: item.id,
+          user_id: item.user_id,
+          tmdb_id: tmdbId,
+          media_type: mediaType,
+          title: tmdbDetails?.title || tmdbDetails?.name || (isMovie ? 'Movie' : 'TV Show'),
+          poster_path: tmdbDetails?.poster_path || null,
+          release_date: tmdbDetails?.release_date || tmdbDetails?.first_air_date || null,
+          vote_average: tmdbDetails?.vote_average || 0,
+          overview: tmdbDetails?.overview || null,
+          created_at: item.added_date || item.created_at,
+          watched: item.watched || false
+        };
+      })
+    );
+
+    return NextResponse.json(enrichedData);
   } catch (error) {
     console.error('Error in GET /api/watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -41,14 +83,33 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
+    // For the existing table structure, we need to adapt our approach
+    // The current table has: id, movie_id, added_date, watched, user_id
+    
     // Check if item already exists in watchlist
-    const { data: existingItem } = await supabase
-      .from('watchlist')
-      .select('id')
-      .eq('user_id', user_id)
-      .eq('tmdb_id', tmdb_id)
-      .eq('media_type', media_type)
-      .single();
+    // For movies, check movie_id; for TV shows, we'll need a different approach
+    let existingItem = null;
+    
+    if (media_type === 'movie') {
+      const { data } = await supabase
+        .from('watchlist')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('movie_id', tmdb_id)
+        .single();
+      existingItem = data;
+    } else {
+      // For TV shows, we'll store them with a negative movie_id to distinguish
+      // This is a workaround for the current table structure
+      const tvId = -tmdb_id; // Use negative ID for TV shows
+      const { data } = await supabase
+        .from('watchlist')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('movie_id', tvId)
+        .single();
+      existingItem = data;
+    }
 
     if (existingItem) {
       return NextResponse.json({ 
@@ -57,19 +118,16 @@ export async function POST(request) {
       }, { status: 409 });
     }
 
-    // Add item to watchlist
+    // Add item to watchlist using the existing table structure
+    const insertData = {
+      user_id,
+      movie_id: media_type === 'movie' ? tmdb_id : -tmdb_id, // Negative for TV shows
+      added_date: new Date().toISOString()
+    };
+
     const { data, error } = await supabase
       .from('watchlist')
-      .insert([{
-        user_id,
-        tmdb_id,
-        media_type,
-        title,
-        poster_path,
-        release_date,
-        vote_average: vote_average || 0,
-        overview
-      }])
+      .insert([insertData])
       .select()
       .single();
 
@@ -78,9 +136,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to add to watchlist' }, { status: 500 });
     }
 
+    // Return data in the expected format
+    const responseData = {
+      id: data.id,
+      user_id: data.user_id,
+      tmdb_id,
+      media_type,
+      title,
+      created_at: data.added_date
+    };
+
     return NextResponse.json({ 
       message: 'Added to watchlist successfully',
-      data 
+      data: responseData 
     }, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/watchlist:', error);
@@ -94,29 +162,57 @@ export async function DELETE(request) {
     const body = await request.json();
     const { id, user_id, tmdb_id, media_type } = body;
 
-    // Delete by ID (preferred) or by user_id + tmdb_id + media_type
-    let query = supabase.from('watchlist');
-    
+    // Support deletion by ID (preferred) or by user_id + tmdb_id + media_type
     if (id) {
-      query = query.eq('id', id);
+      // Delete by ID
+      const { data, error } = await supabase
+        .from('watchlist')
+        .delete()
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        console.error('Error removing from watchlist:', error);
+        return NextResponse.json({ error: 'Failed to remove from watchlist' }, { status: 500 });
+      }
+
+      if (data.length === 0) {
+        return NextResponse.json({ error: 'Item not found in watchlist' }, { status: 404 });
+      }
+
+      return NextResponse.json({ 
+        message: 'Removed from watchlist successfully',
+        data: data[0] 
+      });
     } else if (user_id && tmdb_id && media_type) {
-      query = query.eq('user_id', user_id).eq('tmdb_id', tmdb_id).eq('media_type', media_type);
+      // Delete by user_id + tmdb_id + media_type
+      const movieId = media_type === 'movie' ? parseInt(tmdb_id) : -parseInt(tmdb_id);
+
+      const { data, error } = await supabase
+        .from('watchlist')
+        .delete()
+        .eq('user_id', user_id)
+        .eq('movie_id', movieId)
+        .select();
+
+      if (error) {
+        console.error('Error removing from watchlist:', error);
+        return NextResponse.json({ error: 'Failed to remove from watchlist' }, { status: 500 });
+      }
+
+      if (data.length === 0) {
+        return NextResponse.json({ error: 'Item not found in watchlist' }, { status: 404 });
+      }
+
+      return NextResponse.json({ 
+        message: 'Removed from watchlist successfully',
+        data: data[0] 
+      });
     } else {
       return NextResponse.json({ 
         error: 'Either id or (user_id, tmdb_id, media_type) is required' 
       }, { status: 400 });
     }
-
-    const { error } = await query.delete();
-
-    if (error) {
-      console.error('Error removing from watchlist:', error);
-      return NextResponse.json({ error: 'Failed to remove from watchlist' }, { status: 500 });
-    }
-
-    return NextResponse.json({ 
-      message: 'Removed from watchlist successfully' 
-    });
   } catch (error) {
     console.error('Error in DELETE /api/watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -135,21 +231,24 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
+    // Adapt to existing table structure
+    const movieId = media_type === 'movie' ? parseInt(tmdb_id) : -parseInt(tmdb_id);
+
     const { data, error } = await supabase
       .from('watchlist')
-      .select('id')
+      .select('id, watched')
       .eq('user_id', user_id)
-      .eq('tmdb_id', tmdb_id)
-      .eq('media_type', media_type)
+      .eq('movie_id', movieId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
-      console.error('Error checking watchlist:', error);
-      return NextResponse.json({ error: 'Failed to check watchlist' }, { status: 500 });
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error checking watchlist status:', error);
+      return NextResponse.json({ error: 'Failed to check watchlist status' }, { status: 500 });
     }
 
     return NextResponse.json({ 
       inWatchlist: !!data,
+      watched: data?.watched || false,
       id: data?.id || null
     });
   } catch (error) {

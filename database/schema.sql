@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS watchlist (
 CREATE TABLE IF NOT EXISTS chatbot_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    role VARCHAR(20) CHECK (role IN ('user', 'assistant')) NOT NULL,
+    role VARCHAR(20) CHECK (role IN ('user', 'model')) NOT NULL,
     content TEXT NOT NULL,
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

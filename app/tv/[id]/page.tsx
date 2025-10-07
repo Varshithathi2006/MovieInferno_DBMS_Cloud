@@ -10,6 +10,7 @@ import { Footer } from "@/components/footer"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { TrailerModal } from "@/components/trailer-modal"
 import { tvApi, getImageUrl, type TVShow } from "@/services/api"
 
 export default function TVShowDetailsPage() {
@@ -19,6 +20,7 @@ export default function TVShowDetailsPage() {
   const [show, setShow] = useState<TVShow | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchShowData = async () => {
@@ -139,7 +141,11 @@ export default function TVShowDetailsPage() {
               <p className="text-lg text-white mb-8 text-pretty leading-relaxed">{show.overview}</p>
 
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white border border-white">
+                <Button 
+                  size="lg" 
+                  className="bg-red-600 hover:bg-red-700 text-white border border-white"
+                  onClick={() => setIsTrailerModalOpen(true)}
+                >
                   <Play className="w-5 h-5 mr-2" />
                   Watch Trailer
                 </Button>
@@ -158,6 +164,15 @@ export default function TVShowDetailsPage() {
       </div>
 
       <Footer />
+      
+      {/* Trailer Modal */}
+      <TrailerModal
+        contentId={show?.id}
+        contentTitle={show?.name || ""}
+        contentType="tv"
+        isOpen={isTrailerModalOpen}
+        onClose={() => setIsTrailerModalOpen(false)}
+      />
     </div>
   )
 }

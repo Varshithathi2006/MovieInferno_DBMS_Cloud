@@ -7,8 +7,10 @@ import Link from "next/link"
 import { Star, Calendar, Bookmark, BookmarkCheck } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { getImageUrl } from "@/services/api"
 import { supabase } from "@/lib/supabaseClient"
+import { useWatchlist } from "@/hooks/use-watchlist"
 
 // --- FIX: Define the TVShow type here ---
 interface TVShow {
@@ -26,95 +28,49 @@ interface TVCardProps {
   className?: string;
 }
 
-export function TVCard({ show, className = "" }: TVCardProps) {
+export default function TVCard({ show }: TVCardProps) {
   const [imageError, setImageError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isInWatchlist, setIsInWatchlist] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useWatchlist(user?.id)
   
   const releaseYear = show.first_air_date ? new Date(show.first_air_date).getFullYear() : "TBA"
   const rating = show.vote_average ? show.vote_average.toFixed(1) : "N/A"
 
-  // Check user authentication and watchlist status
   useEffect(() => {
-    const checkUserAndWatchlist = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await checkWatchlistStatus(session.user.id);
-      }
-    };
-    
-    checkUserAndWatchlist();
-  }, [show.id]);
-
-  const checkWatchlistStatus = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/watchlist?user_id=${userId}`);
-      if (response.ok) {
-        const watchlist = await response.json();
-        const isInList = watchlist.some((item: any) => 
-          item.tmdb_id === show.id && item.media_type === 'tv'
-        );
-        setIsInWatchlist(isInList);
-      }
-    } catch (error) {
-      console.error('Error checking watchlist status:', error);
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user || null)
     }
-  };
+    checkUser()
+  }, [])
 
   const handleWatchlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!user) {
-      alert('Please sign in to add items to your watchlist');
-      return;
+      alert('Please log in to add shows to your watchlist')
+      return
     }
 
     setIsLoading(true);
     
     try {
-      if (isInWatchlist) {
-        // Remove from watchlist
-        const response = await fetch('/api/watchlist', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            user_id: user.id,
-            tmdb_id: show.id,
-            media_type: 'tv'
-          }),
-        });
+      const inWatchlist = isInWatchlist(show.id, 'tv')
 
-        if (response.ok) {
-          setIsInWatchlist(false);
-        } else {
-          throw new Error('Failed to remove from watchlist');
-        }
+      if (inWatchlist) {
+        await removeFromWatchlist(show.id, 'tv')
       } else {
-        // Add to watchlist
-        const response = await fetch('/api/watchlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: user.id,
-            tmdb_id: show.id,
-            media_type: 'tv',
-            title: show.name,
-            poster_path: show.poster_path,
-            release_date: show.first_air_date,
-            vote_average: show.vote_average,
-            overview: show.overview
-          }),
-        });
-
-        if (response.ok) {
-          setIsInWatchlist(true);
-        } else {
-          throw new Error('Failed to add to watchlist');
-        }
+        await addToWatchlist({
+          tmdb_id: show.id,
+          media_type: 'tv',
+          title: show.name,
+          poster_path: show.poster_path,
+          release_date: show.first_air_date,
+          vote_average: show.vote_average || 0,
+          overview: show.overview
+        })
       }
     } catch (error) {
       console.error('Watchlist Error:', error);
@@ -168,13 +124,13 @@ export function TVCard({ show, className = "" }: TVCardProps) {
           <Button 
             onClick={handleWatchlistToggle}
             disabled={isLoading}
-            variant={isInWatchlist ? "secondary" : "default"}
-            className={`w-full border border-white ${isInWatchlist ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
+            variant={isInWatchlist(show.id, 'tv') ? "secondary" : "default"}
+            className={`w-full border border-white ${isInWatchlist(show.id, 'tv') ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
             size="sm"
           >
             {isLoading ? (
               'Loading...'
-            ) : isInWatchlist ? (
+            ) : isInWatchlist(show.id, 'tv') ? (
               <>
                 <BookmarkCheck className="w-4 h-4 mr-2" />
                 In Watchlist

@@ -15,47 +15,54 @@ import { Chatbot } from "@/components/Chatbot"
 // ----------------------------------------
 
 export default function HomePage() {
-  const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
-  const [popularMovies, setPopularMovies] = useState<Movie[]>([])
-  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>([])
-  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isApiKeyMissing, setIsApiKeyMissing] = useState(false)
+  const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
+  const [popularMovies, setPopularMovies] = useState<Movie[]>([])
+  const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>([])
+  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([])
+  const [loading, setLoading] = useState(true)
+  const [sectionsLoading, setSectionsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isApiKeyMissing, setIsApiKeyMissing] = useState(false)
 
   useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const [trending, popular, topRated, upcoming] = await Promise.all([
-          movieApi.getTrending(),
-          movieApi.getPopular(),
-          movieApi.getTopRated(),
-          movieApi.getUpcoming(),
-        ])
+    const fetchMovies = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Load trending movies first for hero carousel
+        const trending = await movieApi.getTrending()
+        setTrendingMovies(trending.results)
+        setLoading(false) // Allow page to render with hero carousel
+        
+        // Load remaining sections progressively
+        const [popular, topRated, upcoming] = await Promise.all([
+          movieApi.getPopular(),
+          movieApi.getTopRated(),
+          movieApi.getUpcoming(),
+        ])
 
-        setTrendingMovies(trending.results)
-        setPopularMovies(popular.results)
-        setTopRatedMovies(topRated.results)
-        setUpcomingMovies(upcoming.results)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
+        setPopularMovies(popular.results)
+        setTopRatedMovies(topRated.results)
+        setUpcomingMovies(upcoming.results)
+        setSectionsLoading(false)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"
 
-        if (errorMessage.includes("API key not configured") || errorMessage.includes("Invalid TMDB API key")) {
-          setIsApiKeyMissing(true)
-          setError("TMDB API key is required to fetch live movie data.")
-        } else {
-          setError("Failed to load movies. Please try again later.")
-        }
-        console.error("Error fetching movies:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
+        if (errorMessage.includes("API key not configured") || errorMessage.includes("Invalid TMDB API key")) {
+          setIsApiKeyMissing(true)
+          setError("TMDB API key is required to fetch live movie data.")
+        } else {
+          setError("Failed to load movies. Please try again later.")
+        }
+        console.error("Error fetching movies:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    fetchMovies()
-  }, [])
+    fetchMovies()
+  }, [])
 
   if (loading) {
     return (
@@ -139,12 +146,23 @@ export default function HomePage() {
         </div>
 
         {/* Movie Sections */}
-        <div className="space-y-12 py-8">
-          <MovieSlider title="Trending Now" movies={trendingMovies} />
-          <MovieSlider title="Popular Movies" movies={popularMovies} />
-          <MovieSlider title="Top Rated" movies={topRatedMovies} />
-          <MovieSlider title="Upcoming" movies={upcomingMovies} />
-        </div>
+        <div className="space-y-12 py-8">
+          <MovieSlider title="Trending Now" movies={trendingMovies} />
+          {sectionsLoading ? (
+            <div className="space-y-12">
+              <div className="flex items-center justify-center py-8">
+                <LoadingSpinner size="md" />
+                <span className="ml-3 text-muted-foreground">Loading more movies...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <MovieSlider title="Popular Movies" movies={popularMovies} />
+              <MovieSlider title="Top Rated" movies={topRatedMovies} />
+              <MovieSlider title="Upcoming" movies={upcomingMovies} />
+            </>
+          )}
+        </div>
         
         {/* ADDITION 2: Chatbot Integration */}
         <div className="py-12 max-w-lg mx-auto">

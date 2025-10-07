@@ -110,7 +110,7 @@ RESPONSE FORMAT:
 
         // 6. Call the Gemini API
         const genAI = ai;
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const chat = model.startChat({
             history: conversation.slice(0, -1), // All except the current message

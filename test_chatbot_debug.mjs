@@ -8,8 +8,8 @@ async function testChatbotAPI() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: 'Hello, can you recommend a movie?',
-        userId: 'test-user-123'
+        message: 'Hello, can you recommend a good action movie?',
+        userId: '550e8400-e29b-41d4-a716-446655440000'
       })
     });
 

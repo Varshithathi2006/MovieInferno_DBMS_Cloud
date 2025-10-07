@@ -36,15 +36,24 @@ async function testGeminiAPI() {
     }
 
     const ai = new GoogleGenerativeAI(geminiApiKey);
-    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    console.log('Sending test request to Gemini...');
+    // Try different model names
+    const modelNames = ["gemini-pro", "gemini-1.5-pro", "gemini-1.5-flash", "text-bison-001"];
     
-    const result = await model.generateContent("Say hello in one word");
-    const response = await result.response;
-    const text = response.text();
-    
-    console.log('✅ Gemini API Response:', text);
+    for (const modelName of modelNames) {
+      try {
+        console.log(`Trying model: ${modelName}`);
+        const model = ai.getGenerativeModel({ model: modelName });
+        
+        const result = await model.generateContent("Say hello in one word");
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log(`✅ Success with model ${modelName}:`, text);
+        break;
+      } catch (error) {
+        console.log(`❌ Failed with model ${modelName}:`, error.message);
+      }
+    }
     
   } catch (error) {
     console.error('❌ Gemini API Test Failed:', error.message);

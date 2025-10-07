@@ -1,6 +1,6 @@
 // app/api/movies/route.js
 
-import { supabase } from "./../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient";
 
 export async function GET() {
   try {

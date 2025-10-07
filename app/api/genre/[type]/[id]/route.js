@@ -1,6 +1,6 @@
 // app/api/genre/[type]/[id]/route.js
 
-import { supabase } from "../../../../lib/supabaseClient";
+import { supabase } from "../../../../../lib/supabaseClient";
 
 export async function GET(request, { params }) {
   const genreId = params.id;

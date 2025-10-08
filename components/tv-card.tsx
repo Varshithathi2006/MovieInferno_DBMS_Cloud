@@ -43,6 +43,13 @@ export function TVCard({ show, className = "" }: TVCardProps) {
       setUser(session?.user || null)
     }
     checkUser()
+
+    // Listen for authentication state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const handleWatchlistToggle = async (e: React.MouseEvent) => {

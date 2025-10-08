@@ -23,7 +23,7 @@ export function MovieCard({ movie, className = "" }: MovieCardProps) {
   const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : "TBA";
   const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
 
-  // Check user authentication
+  // Check user authentication and listen for auth changes
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -31,6 +31,13 @@ export function MovieCard({ movie, className = "" }: MovieCardProps) {
     };
     
     checkUser();
+
+    // Listen for authentication state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleWatchlistToggle = async (e: React.MouseEvent) => {

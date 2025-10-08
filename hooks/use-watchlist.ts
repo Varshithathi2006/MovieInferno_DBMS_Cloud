@@ -52,7 +52,7 @@ export function useWatchlist(userId: string | null): UseWatchlistReturn {
     }
   }, [userId]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription and refresh after operations
   useEffect(() => {
     if (!userId) return;
 
@@ -71,22 +71,8 @@ export function useWatchlist(userId: string | null): UseWatchlistReturn {
         },
         (payload) => {
           console.log('Watchlist change detected:', payload);
-          
-          if (payload.eventType === 'INSERT') {
-            // Add new item to local state
-            const newItem = payload.new as WatchlistItem;
-            setWatchlistItems(prev => [...prev, newItem]);
-          } else if (payload.eventType === 'DELETE') {
-            // Remove item from local state
-            const deletedItem = payload.old as WatchlistItem;
-            setWatchlistItems(prev => prev.filter(item => item.id !== deletedItem.id));
-          } else if (payload.eventType === 'UPDATE') {
-            // Update item in local state
-            const updatedItem = payload.new as WatchlistItem;
-            setWatchlistItems(prev => 
-              prev.map(item => item.id === updatedItem.id ? updatedItem : item)
-            );
-          }
+          // Refresh the entire watchlist to ensure consistency
+          fetchWatchlist();
         }
       )
       .subscribe();
@@ -118,13 +104,16 @@ export function useWatchlist(userId: string | null): UseWatchlistReturn {
       });
 
       if (!response.ok) throw new Error('Failed to add to watchlist');
+      
+      // Refresh watchlist immediately for UI update
+      await fetchWatchlist();
       return true;
     } catch (error) {
       console.error('Error adding to watchlist:', error);
       setError('Failed to add to watchlist');
       return false;
     }
-  }, [userId]);
+  }, [userId, fetchWatchlist]);
 
   // Remove from watchlist
   const removeFromWatchlist = useCallback(async (tmdbId: number, mediaType: 'movie' | 'tv') => {
@@ -142,13 +131,16 @@ export function useWatchlist(userId: string | null): UseWatchlistReturn {
       });
 
       if (!response.ok) throw new Error('Failed to remove from watchlist');
+      
+      // Refresh watchlist immediately for UI update
+      await fetchWatchlist();
       return true;
     } catch (error) {
       console.error('Error removing from watchlist:', error);
       setError('Failed to remove from watchlist');
       return false;
     }
-  }, [userId]);
+  }, [userId, fetchWatchlist]);
 
   return {
     watchlistItems,

@@ -14,6 +14,9 @@ import { ExternalLink, Key } from "lucide-react"
 import { Chatbot } from "@/components/Chatbot" 
 // ----------------------------------------
 
+// TEMPORARY: Import debug component for testing
+
+
 export default function HomePage() {
   const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
   const [popularMovies, setPopularMovies] = useState<Movie[]>([])
@@ -171,8 +174,8 @@ export default function HomePage() {
         </div>
         {/* ----------------------------- */}
 
-      </main>
-      <Footer />
-    </div>
-  )
+      </main>
+      <Footer />
+    </div>
+  )
 }

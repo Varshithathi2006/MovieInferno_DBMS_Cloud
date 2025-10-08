@@ -28,7 +28,7 @@ interface TVCardProps {
   className?: string;
 }
 
-export default function TVCard({ show }: TVCardProps) {
+export default function TVCard({ show, className = "" }: TVCardProps) {
   const [imageError, setImageError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<any>(null)

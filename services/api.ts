@@ -223,6 +223,10 @@ export const personApi = {
 export const genreApi = {
   getMovieGenres: () => fetchFromAPI<{ genres: Genre[] }>("/genre/movie/list"),
   getTVGenres: () => fetchFromAPI<{ genres: Genre[] }>("/genre/tv/list"),
+  getMoviesByGenre: (genreId: number, page = 1) => 
+    fetchFromAPI<ApiResponse<Movie>>(`/discover/movie?with_genres=${genreId}&page=${page}`),
+  getTVByGenre: (genreId: number, page = 1) => 
+    fetchFromAPI<ApiResponse<TVShow>>(`/discover/tv?with_genres=${genreId}&page=${page}`),
 }
 
 // Multi-search function

@@ -11,18 +11,19 @@ export async function GET(request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Check if the table has the new structure or old structure
+    // Fetch from the existing table structure
     const { data, error } = await supabase
       .from('watchlist')
       .select('*')
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .order('added_date', { ascending: false });
 
     if (error) {
       console.error('Error fetching watchlist:', error);
       return NextResponse.json({ error: 'Failed to fetch watchlist' }, { status: 500 });
     }
 
-    // Transform old structure and fetch TMDB details
+    // Transform data and fetch TMDB details
     const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
     const API_BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -57,7 +58,7 @@ export async function GET(request) {
           release_date: tmdbDetails?.release_date || tmdbDetails?.first_air_date || null,
           vote_average: tmdbDetails?.vote_average || 0,
           overview: tmdbDetails?.overview || null,
-          created_at: item.added_date || item.created_at,
+          created_at: item.added_date,
           watched: item.watched || false
         };
       })
@@ -77,39 +78,23 @@ export async function POST(request) {
     const { user_id, tmdb_id, media_type, title, poster_path, release_date, vote_average, overview } = body;
 
     // Validate required fields
-    if (!user_id || !tmdb_id || !media_type || !title) {
+    if (!user_id || !tmdb_id || !media_type) {
       return NextResponse.json({ 
-        error: 'Missing required fields: user_id, tmdb_id, media_type, title' 
+        error: 'Missing required fields: user_id, tmdb_id, media_type' 
       }, { status: 400 });
     }
 
-    // For the existing table structure, we need to adapt our approach
-    // The current table has: id, movie_id, added_date, watched, user_id
+    // Convert tmdb_id based on media_type for the existing table structure
+    // Positive values for movies, negative values for TV shows
+    const movieId = media_type === 'movie' ? parseInt(tmdb_id) : -parseInt(tmdb_id);
     
     // Check if item already exists in watchlist
-    // For movies, check movie_id; for TV shows, we'll need a different approach
-    let existingItem = null;
-    
-    if (media_type === 'movie') {
-      const { data } = await supabase
-        .from('watchlist')
-        .select('id')
-        .eq('user_id', user_id)
-        .eq('movie_id', tmdb_id)
-        .single();
-      existingItem = data;
-    } else {
-      // For TV shows, we'll store them with a negative movie_id to distinguish
-      // This is a workaround for the current table structure
-      const tvId = -tmdb_id; // Use negative ID for TV shows
-      const { data } = await supabase
-        .from('watchlist')
-        .select('id')
-        .eq('user_id', user_id)
-        .eq('movie_id', tvId)
-        .single();
-      existingItem = data;
-    }
+    const { data: existingItem } = await supabase
+      .from('watchlist')
+      .select('id')
+      .eq('user_id', user_id)
+      .eq('movie_id', movieId)
+      .single();
 
     if (existingItem) {
       return NextResponse.json({ 
@@ -121,8 +106,9 @@ export async function POST(request) {
     // Add item to watchlist using the existing table structure
     const insertData = {
       user_id,
-      movie_id: media_type === 'movie' ? tmdb_id : -tmdb_id, // Negative for TV shows
-      added_date: new Date().toISOString()
+      movie_id: movieId,
+      added_date: new Date().toISOString(),
+      watched: false
     };
 
     const { data, error } = await supabase
@@ -140,9 +126,9 @@ export async function POST(request) {
     const responseData = {
       id: data.id,
       user_id: data.user_id,
-      tmdb_id,
+      tmdb_id: parseInt(tmdb_id),
       media_type,
-      title,
+      title: title || (media_type === 'movie' ? 'Movie' : 'TV Show'),
       created_at: data.added_date
     };
 
@@ -169,6 +155,7 @@ export async function DELETE(request) {
         .from('watchlist')
         .delete()
         .eq('id', id)
+        .eq('user_id', user_id) // Ensure user can only delete their own items
         .select();
 
       if (error) {
@@ -231,7 +218,7 @@ export async function PUT(request) {
       }, { status: 400 });
     }
 
-    // Adapt to existing table structure
+    // Convert tmdb_id based on media_type for the existing table structure
     const movieId = media_type === 'movie' ? parseInt(tmdb_id) : -parseInt(tmdb_id);
 
     const { data, error } = await supabase

@@ -11,7 +11,7 @@ async function testChatbotAPI() {
       },
       body: JSON.stringify({
         message: 'Hi! Can you recommend some action movies?',
-        userId: 'test-user-123'
+        userId: '4f17cd3f-425e-4517-b4bd-1bbd82a181ae'
       })
     });
 
@@ -20,10 +20,10 @@ async function testChatbotAPI() {
     }
 
     const data = await response.json();
-    console.log('✅ Chatbot API Response:', data);
+    console.log('✅ Chatbot API Response received');
     
-    if (data.response) {
-      console.log('✅ Bot Response:', data.response);
+    if (data.text) {
+      console.log('✅ Bot Response:', data.text);
     } else {
       console.log('❌ No response from bot');
     }

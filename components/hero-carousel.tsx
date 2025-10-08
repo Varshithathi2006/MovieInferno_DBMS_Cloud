@@ -17,15 +17,8 @@ export function HeroCarousel({ movies }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false)
 
-  useEffect(() => {
-    if (movies.length === 0) return
-
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % movies.length)
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [movies.length])
+  // Removed automatic slideshow to prevent trailers from changing automatically
+  // Users can still navigate manually using arrows or dots
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index)

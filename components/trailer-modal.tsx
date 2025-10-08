@@ -94,7 +94,7 @@ export function TrailerModal({ contentId, contentTitle, contentType, isOpen, onC
 
           {!loading && !error && videos.length > 0 && (
             <div className="space-y-4">
-              {/* Main trailer */}
+              {/* Main trailer only - removed additional trailers to clean up the interface */}
               <div className="aspect-video">
                 <iframe
                   src={getYouTubeEmbedUrl(videos[0].key)}
@@ -104,32 +104,6 @@ export function TrailerModal({ contentId, contentTitle, contentType, isOpen, onC
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 />
               </div>
-
-              {/* Additional trailers */}
-              {videos.length > 1 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    More Trailers
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {videos.slice(1).map((video) => (
-                      <button
-                        key={video.id}
-                        onClick={() => {
-                          const iframe = document.querySelector('iframe') as HTMLIFrameElement
-                          if (iframe) {
-                            iframe.src = getYouTubeEmbedUrl(video.key)
-                          }
-                        }}
-                        className="text-left p-2 rounded-lg hover:bg-muted transition-colors"
-                      >
-                        <p className="text-sm font-medium truncate">{video.name}</p>
-                        <p className="text-xs text-muted-foreground">{video.type}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

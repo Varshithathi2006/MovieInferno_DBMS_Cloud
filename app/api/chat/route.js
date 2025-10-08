@@ -1,7 +1,7 @@
 // app/api/chat/route.js
 
 import { ai } from '../../../lib/aiClient'; // Import the AI client
-import { supabase } from '../../../lib/supabaseClient'; // Import the database client
+import { supabase } from '@/lib/supabaseClient'; // Import the database client
 
 export async function POST(request) {
     try {

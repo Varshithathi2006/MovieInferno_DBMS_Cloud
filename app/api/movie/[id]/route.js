@@ -1,6 +1,6 @@
 // app/api/movie/[id]/route.js
 
-import { supabase } from "../../../../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export async function GET(request, { params }) {
   const movieId = params.id;

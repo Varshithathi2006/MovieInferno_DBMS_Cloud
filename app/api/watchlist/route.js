@@ -108,7 +108,7 @@ export async function POST(request) {
       user_id,
       movie_id: movieId,
       added_date: new Date().toISOString(),
-      watched: false
+      watched: 0  // Use 0 instead of false for smallint compatibility
     };
 
     const { data, error } = await supabase

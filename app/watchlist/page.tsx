@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Bookmark, BookmarkX, Film, Tv, Calendar, Star, Trash2, Heart } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useWatchlist } from '@/hooks/use-watchlist';
+import { Navbar } from '@/components/navbar';
 
 interface WatchlistItem {
   id: string;
@@ -24,9 +25,9 @@ export default function WatchlistPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [filter, setFilter] = useState<'all' | 'movie' | 'tv'>('all');
-  const [sortBy, setSortBy] = useState<'date' | 'title' | 'rating'>('date');
+  const [sortBy, setSortBy] = useState<'date_added' | 'title' | 'rating'>('date_added');
   
-  const { watchlistItems, removeFromWatchlist, loading, error } = useWatchlist(user?.id);
+  const { watchlistItems, isInWatchlist, addToWatchlist, removeFromWatchlist, loading: watchlistLoading, error: watchlistError } = useWatchlist(user?.id);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -57,7 +58,7 @@ export default function WatchlistPage() {
     }
   });
 
-  if (loading) {
+  if (watchlistLoading) {
     return (
       <div className="min-h-screen bg-black text-white p-8">
         <div className="text-center">
@@ -68,24 +69,21 @@ export default function WatchlistPage() {
     );
   }
 
-  if (error) {
+  if (watchlistError) {
     return (
       <div className="min-h-screen bg-black text-white p-8">
         <div className="text-center border border-red-500 rounded-lg p-8 bg-gray-900 max-w-md mx-auto mt-20">
-          <div className="text-red-400 text-xl mb-4">⚠️ {error}</div>
-          <button 
-            onClick={() => user && fetchWatchlist(user.id)} 
-            className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors border border-white"
-          >
-            Try Again
-          </button>
+          <div className="text-red-400 text-xl mb-4">⚠️ {watchlistError}</div>
+           <div className="text-gray-400">Please refresh the page to try again.</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -243,5 +241,6 @@ export default function WatchlistPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

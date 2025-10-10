@@ -18,6 +18,28 @@ import { FloatingChatbot } from "@/components/floating-chatbot"
 // TEMPORARY: Import debug component for testing
 
 
+// Utility function to remove duplicates across movie sections
+const removeDuplicatesAcrossSections = (sections: { [key: string]: Movie[] }) => {
+  const seenIds = new Set<number>()
+  const result: { [key: string]: Movie[] } = {}
+  
+  // Process sections in priority order (trending first, then popular, etc.)
+  const sectionOrder = ['trending', 'popular', 'topRated', 'upcoming']
+  
+  for (const sectionName of sectionOrder) {
+    const movies = sections[sectionName] || []
+    result[sectionName] = movies.filter(movie => {
+      if (seenIds.has(movie.id)) {
+        return false // Skip duplicate
+      }
+      seenIds.add(movie.id)
+      return true
+    })
+  }
+  
+  return result
+}
+
 export default function HomePage() {
   const [trendingMovies, setTrendingMovies] = useState<Movie[]>([])
   const [popularMovies, setPopularMovies] = useState<Movie[]>([])
@@ -46,9 +68,19 @@ export default function HomePage() {
           movieApi.getUpcoming(),
         ])
 
-        setPopularMovies(popular.results)
-        setTopRatedMovies(topRated.results)
-        setUpcomingMovies(upcoming.results)
+        // Apply duplicate filtering across all sections
+        const filteredSections = removeDuplicatesAcrossSections({
+          trending: trending.results,
+          popular: popular.results,
+          topRated: topRated.results,
+          upcoming: upcoming.results
+        })
+
+        // Update state with filtered results
+        setTrendingMovies(filteredSections.trending)
+        setPopularMovies(filteredSections.popular)
+        setTopRatedMovies(filteredSections.topRated)
+        setUpcomingMovies(filteredSections.upcoming)
         setSectionsLoading(false)
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Unknown error occurred"

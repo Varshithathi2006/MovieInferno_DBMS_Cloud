@@ -18,7 +18,7 @@ interface MovieCardProps {
 
 export function MovieCard({ movie, className = "" }: MovieCardProps) {
   const [user, setUser] = useState<any>(null);
-  const { isInWatchlist, addToWatchlist, removeFromWatchlist, isLoading } = useWatchlist(user?.id);
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, loading: isLoading } = useWatchlist(user?.id);
   
   const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : "TBA";
   const rating = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";

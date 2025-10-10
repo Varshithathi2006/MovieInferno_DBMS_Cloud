@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { Navbar } from "@/components/navbar";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -92,7 +93,9 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-black p-4 relative overflow-hidden">
+    <>
+      <Navbar />
+      <div className="flex justify-center items-center min-h-screen bg-black p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Floating film reels */}
@@ -380,5 +383,6 @@ export default function SignupPage() {
         }
       `}</style>
     </div>
+    </>
   );
 }

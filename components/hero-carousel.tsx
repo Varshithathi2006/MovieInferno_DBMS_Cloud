@@ -18,13 +18,13 @@ export function HeroCarousel({ movies }: HeroCarouselProps) {
   const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
 
-  // Auto-slide functionality with 5-second intervals
+  // Auto-slide functionality with 3-second intervals
   useEffect(() => {
     if (movies.length <= 1 || isPaused || isTrailerModalOpen) return
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % movies.length)
-    }, 5000) // Change slide every 5 seconds
+    }, 3000) // Change slide every 3 seconds
 
     return () => clearInterval(interval)
   }, [movies.length, isPaused, isTrailerModalOpen])

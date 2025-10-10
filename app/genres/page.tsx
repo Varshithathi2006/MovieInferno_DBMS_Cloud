@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Film, Tv, Star, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { Navbar } from '@/components/navbar';
 
 interface Genre {
   id: number;
@@ -80,7 +81,9 @@ export default function GenresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -240,5 +243,6 @@ export default function GenresPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

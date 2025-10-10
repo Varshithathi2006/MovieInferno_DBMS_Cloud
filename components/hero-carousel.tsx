@@ -16,9 +16,18 @@ interface HeroCarouselProps {
 export function HeroCarousel({ movies }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
 
-  // Removed automatic slideshow to prevent trailers from changing automatically
-  // Users can still navigate manually using arrows or dots
+  // Auto-slide functionality with 5-second intervals
+  useEffect(() => {
+    if (movies.length <= 1 || isPaused || isTrailerModalOpen) return
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % movies.length)
+    }, 5000) // Change slide every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [movies.length, isPaused, isTrailerModalOpen])
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index)
@@ -38,13 +47,17 @@ export function HeroCarousel({ movies }: HeroCarouselProps) {
   const releaseYear = currentMovie.release_date ? new Date(currentMovie.release_date).getFullYear() : "TBA"
 
   return (
-    <section className="relative h-[70vh] min-h-[500px] overflow-hidden rounded-lg">
+    <section 
+      className="relative h-[70vh] min-h-[500px] overflow-hidden rounded-lg"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       <div className="absolute inset-0">
         <Image
           src={getImageUrl(currentMovie.backdrop_path, "original") || "/placeholder.svg"}
           alt={currentMovie.title}
           fill
-          className="object-cover"
+          className="object-cover transition-all duration-1000 ease-in-out"
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
@@ -54,7 +67,8 @@ export function HeroCarousel({ movies }: HeroCarouselProps) {
       {/* Content */}
       <div className="relative h-full flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl transition-all duration-700 ease-in-out transform"
+               key={currentIndex}>
             <Badge variant="secondary" className="mb-4 bg-accent/20 text-accent border-accent/30">
               <Star className="w-3 h-3 mr-1 fill-accent" />
               {currentMovie.vote_average.toFixed(1)} • {releaseYear}

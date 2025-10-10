@@ -237,14 +237,54 @@ export function Chatbot() {
                             </div>
                         )}
                         
-                        <div className={`max-w-[80%] rounded-lg p-3 ${
+                        <div className={`max-w-[80%] rounded-lg p-4 ${
                             msg.role === 'user' 
                                 ? 'bg-primary text-primary-foreground ml-auto' 
                                 : msg.role === 'error'
                                 ? 'bg-destructive/10 text-destructive border border-destructive/20'
                                 : 'bg-muted text-foreground'
                         }`}>
-                            <p className="whitespace-pre-wrap">{msg.content}</p>
+                            <div className="whitespace-pre-wrap leading-relaxed space-y-2">
+                                {msg.content.split('\n').map((line, lineIndex) => {
+                                    // Handle bullet points
+                                    if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+                                        return (
+                                            <div key={lineIndex} className="flex items-start gap-2">
+                                                <span className="text-primary mt-1">•</span>
+                                                <span>{line.replace(/^[•\-]\s*/, '')}</span>
+                                            </div>
+                                        );
+                                    }
+                                    // Handle numbered lists
+                                    if (/^\d+\./.test(line.trim())) {
+                                        return (
+                                            <div key={lineIndex} className="flex items-start gap-2">
+                                                <span className="text-primary font-medium">{line.match(/^\d+\./)?.[0]}</span>
+                                                <span>{line.replace(/^\d+\.\s*/, '')}</span>
+                                            </div>
+                                        );
+                                    }
+                                    // Handle bold text (simple **text** format)
+                                    if (line.includes('**')) {
+                                        const parts = line.split(/(\*\*.*?\*\*)/);
+                                        return (
+                                            <p key={lineIndex}>
+                                                {parts.map((part, partIndex) => 
+                                                    part.startsWith('**') && part.endsWith('**') ? (
+                                                        <strong key={partIndex} className="font-semibold">
+                                                            {part.slice(2, -2)}
+                                                        </strong>
+                                                    ) : (
+                                                        <span key={partIndex}>{part}</span>
+                                                    )
+                                                )}
+                                            </p>
+                                        );
+                                    }
+                                    // Regular lines
+                                    return line.trim() ? <p key={lineIndex}>{line}</p> : <br key={lineIndex} />;
+                                })}
+                            </div>
                             {msg.timestamp && (
                                 <p className="text-xs opacity-70 mt-1">
                                     {msg.timestamp.toLocaleTimeString()}

@@ -12,6 +12,7 @@ import { ExternalLink, Key } from "lucide-react"
 
 // ADDITION 1: Import the Chatbot Component
 import { Chatbot } from "@/components/Chatbot" 
+import { FloatingChatbot } from "@/components/floating-chatbot"
 // ----------------------------------------
 
 // TEMPORARY: Import debug component for testing
@@ -176,6 +177,9 @@ export default function HomePage() {
 
       </main>
       <Footer />
+      
+      {/* Floating Chatbot */}
+      <FloatingChatbot />
     </div>
   )
 }

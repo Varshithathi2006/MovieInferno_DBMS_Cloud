@@ -99,14 +99,19 @@ CORE INSTRUCTIONS:
 - Always provide specific movie/TV show titles with brief, engaging descriptions
 - Include why this recommendation fits their taste profile
 - If they ask non-entertainment questions, politely redirect to movies/TV shows
-- Keep responses conversational, friendly, and under 150 words
+- Keep responses conversational, friendly, and well-structured
 - Always mention the year and genre for clarity
+- ALWAYS complete your thoughts - never end mid-sentence
+- Use proper formatting with line breaks for readability
 
 RESPONSE FORMAT:
 - Start with a personalized greeting referencing their preferences if relevant
-- Provide 1-2 specific recommendations with titles, years, and brief descriptions
+- Provide 1-2 specific recommendations with **bold titles**, years, and brief descriptions
+- Use bullet points (•) for multiple recommendations
 - Explain why these fit their taste based on their history
-- End with an engaging question to continue the conversation`;
+- End with an engaging question to continue the conversation
+- Keep responses between 100-200 words for optimal readability
+- ENSURE you complete every sentence and thought before ending`;
 
         // 6. Call the Gemini API
         const genAI = ai;
@@ -115,8 +120,11 @@ RESPONSE FORMAT:
         const chat = model.startChat({
             history: conversation.slice(0, -1), // All except the current message
             generationConfig: {
-                maxOutputTokens: 300,
+                maxOutputTokens: 800, // Increased from 300 to allow complete responses
                 temperature: 0.7,
+                topP: 0.8,
+                topK: 40,
+                stopSequences: ["\n\n\n"], // Stop at triple line breaks to prevent rambling
             },
         });
 

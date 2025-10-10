@@ -6,9 +6,30 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('user_id');
+    const sortBy = searchParams.get('sort_by') || 'date_added';
+    const sortOrder = searchParams.get('sort_order') || 'desc';
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Determine the column to sort by
+    let orderColumn = 'created_at'; // Default to created_at for date_added
+    let ascending = sortOrder === 'asc';
+
+    switch (sortBy) {
+      case 'title':
+        // We'll sort by title after fetching TMDB data since title comes from TMDB
+        orderColumn = 'created_at';
+        break;
+      case 'rating':
+        // We'll sort by rating after fetching TMDB data since rating comes from TMDB
+        orderColumn = 'created_at';
+        break;
+      case 'date_added':
+      default:
+        orderColumn = 'created_at';
+        break;
     }
 
     // Fetch from the existing table structure
@@ -16,7 +37,7 @@ export async function GET(request) {
       .from('watchlist')
       .select('*')
       .eq('user_id', userId)
-      .order('added_date', { ascending: false });
+      .order(orderColumn, { ascending });
 
     if (error) {
       console.error('Error fetching watchlist:', error);
@@ -58,13 +79,34 @@ export async function GET(request) {
           release_date: tmdbDetails?.release_date || tmdbDetails?.first_air_date || null,
           vote_average: tmdbDetails?.vote_average || 0,
           overview: tmdbDetails?.overview || null,
-          created_at: item.added_date,
+          created_at: item.created_at, // Use created_at instead of added_date
           watched: item.watched || false
         };
       })
     );
 
-    return NextResponse.json(enrichedData);
+    // Apply sorting after enriching with TMDB data
+    let sortedData = [...enrichedData];
+    switch (sortBy) {
+      case 'title':
+        sortedData.sort((a, b) => {
+          const comparison = a.title.localeCompare(b.title);
+          return ascending ? comparison : -comparison;
+        });
+        break;
+      case 'rating':
+        sortedData.sort((a, b) => {
+          const comparison = a.vote_average - b.vote_average;
+          return ascending ? comparison : -comparison;
+        });
+        break;
+      case 'date_added':
+      default:
+        // Already sorted by database query for date_added
+        break;
+    }
+
+    return NextResponse.json(sortedData);
   } catch (error) {
     console.error('Error in GET /api/watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -107,8 +149,8 @@ export async function POST(request) {
     const insertData = {
       user_id,
       movie_id: movieId,
-      added_date: new Date().toISOString(),
       watched: 0  // Use 0 instead of false for smallint compatibility
+      // created_at will be automatically set by the database
     };
 
     const { data, error } = await supabase
@@ -129,7 +171,7 @@ export async function POST(request) {
       tmdb_id: parseInt(tmdb_id),
       media_type,
       title: title || (media_type === 'movie' ? 'Movie' : 'TV Show'),
-      created_at: data.added_date
+      created_at: data.created_at
     };
 
     return NextResponse.json({ 

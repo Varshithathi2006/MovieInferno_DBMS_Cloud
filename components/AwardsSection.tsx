@@ -15,7 +15,7 @@ interface AwardData {
     created_at: string;
     movie?: {
         title: string;
-        poster_path: string;
+        poster: string;
         release_date: string;
     };
 }
@@ -57,17 +57,10 @@ export function AwardsSection({
             setLoading(true);
             setError(null);
 
-            // Fetch awards with movie details
+            // First, fetch awards data
             const { data: awardsData, error: awardsError } = await supabase
                 .from('awards')
-                .select(`
-                    *,
-                    movies:movie_id (
-                        title,
-                        poster_path,
-                        release_date
-                    )
-                `)
+                .select('*')
                 .order('year', { ascending: false })
                 .limit(limit);
 
@@ -75,16 +68,28 @@ export function AwardsSection({
                 throw awardsError;
             }
 
-            const processedAwards = awardsData?.map(award => ({
-                ...award,
-                movie: award.movies
-            })) || [];
+            // Then fetch movie details for each award
+            const processedAwards = [];
+            if (awardsData && awardsData.length > 0) {
+                for (const award of awardsData) {
+                    const { data: movieData } = await supabase
+                        .from('movies')
+                        .select('title, poster, release_date')
+                        .eq('id', award.movie_id)
+                        .single();
+
+                    processedAwards.push({
+                        ...award,
+                        movie: movieData
+                    });
+                }
+            }
 
             setAwards(processedAwards);
 
             // Extract unique categories and years for filters
-            const uniqueCategories = [...new Set(processedAwards.map(award => award.category))];
-            const uniqueYears = [...new Set(processedAwards.map(award => award.year))].sort((a, b) => b - a);
+            const uniqueCategories = [...new Set(processedAwards.map(award => award.category))].filter(Boolean);
+            const uniqueYears = [...new Set(processedAwards.map(award => award.year))].filter(Boolean).sort((a, b) => b - a);
             
             setCategories(uniqueCategories);
             setYears(uniqueYears);

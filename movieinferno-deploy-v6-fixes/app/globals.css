@@ -1,0 +1,353 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(0.1 0 0); /* #1a1a1a - Main interface background */
+  --foreground: oklch(1 0 0); /* #ffffff - Main text color */
+  --card: oklch(0.2 0 0); /* #333333 - Background for movie cards */
+  --card-foreground: oklch(1 0 0); /* #ffffff - Text color on cards */
+  --popover: oklch(0 0 0); /* #000000 - Background for pop-ups */
+  --popover-foreground: oklch(1 0 0); /* #ffffff - Text color for pop-ups */
+  --primary: oklch(0.65 0.25 25); /* #FF4500 - Main accent color */
+  --primary-foreground: oklch(1 0 0); /* #ffffff - Text color on primary buttons */
+  --secondary: oklch(0.2 0 0); /* #333333 - Background for secondary elements */
+  --secondary-foreground: oklch(1 0 0); /* #ffffff - Text color for secondary elements */
+  --muted: oklch(0.45 0.02 240); /* #475569 - Muted text color */
+  --muted-foreground: oklch(0.8 0 0); /* Muted text for backgrounds */
+  --accent: oklch(0.65 0.25 25); /* #FF4500 - Neon orange accent color */
+  --accent-foreground: oklch(1 0 0); /* #ffffff - Text color on accent elements */
+  --destructive: oklch(0.5 0.22 15); /* #be123c - Color for destructive actions */
+  --destructive-foreground: oklch(1 0 0); /* #ffffff - Text color for destructive actions */
+  --border: oklch(0.3 0 0); /* Border color for cards and elements */
+  --input: oklch(0.2 0 0); /* #333333 - Background color for input fields */
+  --ring: oklch(0.65 0.25 25 / 0.5); /* Ring color for focus states */
+  --chart-1: oklch(0.65 0.25 25); /* #FF4500 - Chart color */
+  --chart-2: oklch(0.68 0.22 20); /* #FF6347 - Additional chart color */
+  --chart-3: oklch(0.7 0.2 18); /* #FF7F50 - Additional chart color */
+  --chart-4: oklch(0.72 0.25 30); /* #FF8C00 - Additional chart color */
+  --chart-5: oklch(0.75 0.22 35); /* #FFA500 - Additional chart color */
+  --radius: 0.5rem; /* Corner rounding for cards and buttons */
+  --sidebar: oklch(0.1 0 0); /* #1a1a1a - Sidebar background */
+  --sidebar-foreground: oklch(1 0 0); /* #ffffff - Text color for sidebar */
+  --sidebar-primary: oklch(0.2 0 0); /* #333333 - Primary element background in sidebar */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff - Primary text color in sidebar */
+  --sidebar-accent: oklch(0.65 0.25 25); /* #FF4500 - Accent color in sidebar */
+  --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff - Accent text color in sidebar */
+  --sidebar-border: oklch(0.3 0 0); /* Border color in sidebar */
+  --sidebar-ring: oklch(0.65 0.25 25 / 0.7); /* Focus ring color in sidebar */
+}
+
+.dark {
+  --background: oklch(0.1 0 0); /* #1a1a1a - Main interface background */
+  --foreground: oklch(1 0 0); /* #ffffff - Main text color */
+  --card: oklch(0.2 0 0); /* #333333 - Background for movie cards */
+  --card-foreground: oklch(1 0 0); /* #ffffff - Text color on cards */
+  --popover: oklch(0 0 0); /* #000000 - Background for pop-ups */
+  --popover-foreground: oklch(1 0 0); /* #ffffff - Text color for pop-ups */
+  --primary: oklch(0.65 0.25 25); /* #FF4500 - Main accent color */
+  --primary-foreground: oklch(1 0 0); /* #ffffff - Text color on primary buttons */
+  --secondary: oklch(0.2 0 0); /* #333333 - Background for secondary elements */
+  --secondary-foreground: oklch(1 0 0); /* #ffffff - Text color for secondary elements */
+  --muted: oklch(0.45 0.02 240); /* #475569 - Muted text color */
+  --muted-foreground: oklch(0.8 0 0); /* Muted text for backgrounds */
+  --accent: oklch(0.65 0.25 25); /* #FF4500 - Neon orange accent color */
+  --accent-foreground: oklch(1 0 0); /* #ffffff - Text color on accent elements */
+  --destructive: oklch(0.5 0.22 15); /* #be123c - Color for destructive actions */
+  --destructive-foreground: oklch(1 0 0); /* #ffffff - Text color for destructive actions */
+  --border: oklch(0.3 0 0); /* Border color for cards and elements */
+  --input: oklch(0.2 0 0); /* #333333 - Background color for input fields */
+  --ring: oklch(0.65 0.25 25 / 0.5); /* Ring color for focus states */
+  --chart-1: oklch(0.65 0.25 25); /* #FF4500 - Chart color */
+  --chart-2: oklch(0.68 0.22 20); /* #FF6347 - Additional chart color */
+  --chart-3: oklch(0.7 0.2 18); /* #FF7F50 - Additional chart color */
+  --chart-4: oklch(0.72 0.25 30); /* #FF8C00 - Additional chart color */
+  --chart-5: oklch(0.75 0.22 35); /* #FFA500 - Additional chart color */
+  --sidebar: oklch(0.1 0 0); /* #1a1a1a - Sidebar background */
+  --sidebar-foreground: oklch(1 0 0); /* #ffffff - Text color for sidebar */
+  --sidebar-primary: oklch(0.2 0 0); /* #333333 - Primary element background in sidebar */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff - Primary text color in sidebar */
+  --sidebar-accent: oklch(0.65 0.25 25); /* #FF4500 - Accent color in sidebar */
+  --sidebar-accent-foreground: oklch(1 0 0); /* #ffffff - Accent text color in sidebar */
+  --sidebar-border: oklch(0.3 0 0); /* Border color in sidebar */
+  --sidebar-ring: oklch(0.65 0.25 25 / 0.7); /* Focus ring color in sidebar */
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Add this to your globals.css or wherever you manage utilities */
+
+/* Main Containers */
+.chat-interface-wrapper {
+  /* Provides structure for the whole chat box */
+  display: flex;
+  flex-direction: column;
+  height: 450px; /* Gives the chat history a fixed height */
+  border: 1px solid #333; /* Dark border */
+  border-radius: 8px;
+  background-color: #1a1a1a;
+}
+
+/* Message History Area */
+.chat-history-display {
+  /* Allows history to scroll and takes up most of the space */
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 15px;
+  /* Simple scrollbar hide for clean look */
+  scrollbar-width: none;
+}
+
+/* Input Form Layout */
+.chat-input-form {
+  /* FIXES THE OVERLAP */
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #333;
+}
+
+.chat-input-form input {
+  /* Input takes up most of the space */
+  flex-grow: 1; 
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  margin-right: 8px;
+  background-color: #2a2a2a;
+  color: white;
+}
+
+.chat-input-form button {
+  /* Send button styling */
+  padding: 8px 15px;
+  background-color: #e50914; /* Netflix red */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+/* Globals.css - Add this entire block or update existing chat styles */
+
+/* Chatbot Wrapper - Responsive & Themed */
+.chat-interface-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 500px; /* Fixed height for scrollable chat */
+  max-width: 550px; /* Max width for larger screens */
+  margin: 20px auto; /* Centered with some vertical margin */
+  background-color: #141414; /* Deep dark background */
+  border-radius: 12px;
+  overflow: hidden; /* Ensures rounded corners are respected */
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.6); /* Subtle shadow */
+  font-family: 'Geist Sans', sans-serif; /* Your project's font */
+}
+
+/* Welcome Message */
+.welcome-msg {
+  color: #a0a0a0; /* Lighter grey for welcome text */
+  text-align: center;
+  padding: 20px;
+  font-size: 1.1em;
+  line-height: 1.5;
+}
+
+/* Chat History Display - With Custom Scrollbar */
+.chat-history-display {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex; /* Flex to push messages to top */
+  flex-direction: column;
+}
+
+/* Custom Scrollbar Styling (Webkit - Chrome, Safari) */
+.chat-history-display::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-history-display::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.chat-history-display::-webkit-scrollbar-thumb {
+  background-color: #e50914; /* Netflix Red */
+  border-radius: 4px;
+  border: 2px solid #1e1e1e;
+}
+
+
+/* Chat Bubble Base */
+.chat-bubble {
+  padding: 12px 18px;
+  margin-bottom: 12px;
+  border-radius: 20px; /* More rounded corners */
+  max-width: 85%; /* Slightly wider bubbles */
+  font-size: 0.95em;
+  line-height: 1.4;
+  word-wrap: break-word; /* Prevents text overflow */
+  transition: all 0.3s ease-out; /* Smooth entrance/update */
+}
+
+/* User Message Bubble */
+.chat-bubble-user {
+  background-color: #e50914; /* Netflix Red */
+  color: #ffffff;
+  margin-left: auto; /* Aligns to the right */
+  border-bottom-right-radius: 4px; /* Slightly less rounded at bottom-right */
+  animation: slideInFromRight 0.4s ease-out; /* Animation */
+}
+
+/* Model (Bot) Message Bubble */
+.chat-bubble-model {
+  background-color: #2a2a2a; /* Dark grey for bot */
+  color: #e0e0e0; /* Light grey text */
+  margin-right: auto; /* Aligns to the left */
+  border-bottom-left-radius: 4px; /* Slightly less rounded at bottom-left */
+  animation: slideInFromLeft 0.4s ease-out; /* Animation */
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  padding: 10px 18px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  color: #707070;
+  font-style: italic;
+  font-size: 0.9em;
+  animation: pulse 1.5s infinite ease-in-out; /* Subtle pulsing animation */
+}
+
+/* Chat Input Form */
+.chat-input-form {
+  display: flex;
+  padding: 15px 20px;
+  border-top: 1px solid #222222; /* Darker border */
+  background-color: #1e1e1e; /* Slightly lighter than main chat background */
+  gap: 10px; /* Space between input and button */
+}
+
+/* Input Field */
+.chat-input-form input {
+  flex-grow: 1;
+  padding: 12px 18px;
+  border: 1px solid #444444; /* Dark grey border */
+  border-radius: 25px; /* Pill-shaped input */
+  background-color: #282828; /* Even darker input background */
+  color: #ffffff;
+  font-size: 1em;
+  outline: none; /* Remove default focus outline */
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.chat-input-form input::placeholder {
+  color: #888888;
+}
+
+.chat-input-form input:focus {
+  border-color: #e50914; /* Netflix Red on focus */
+  box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.3); /* Soft red glow on focus */
+}
+
+/* Send Button */
+.chat-input-form button {
+  padding: 12px 25px;
+  background-color: #e50914; /* Netflix Red */
+  color: #ffffff;
+  border: none;
+  border-radius: 25px; /* Pill-shaped button */
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 600;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease-out;
+}
+
+.chat-input-form button:hover:not(:disabled) {
+  background-color: #ff0b1d; /* Brighter red on hover */
+  transform: translateY(-1px); /* Slight lift effect */
+}
+
+.chat-input-form button:disabled {
+  background-color: #4a4a4a; /* Darker grey when disabled */
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* --- Keyframe Animations --- */
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}

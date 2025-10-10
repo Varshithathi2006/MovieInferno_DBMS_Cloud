@@ -1,4 +1,4 @@
-// File: C:\Users\varshitha-home\Desktop\last_hope\MovieInferno\app\api\reviews\route.js
+// File: C:\Users\varshitha-home\Desktop\last_hope\MovieInferno\movieinferno-deploy-v6-fixes\app\api\reviews\route.js
 import * as entry from '../../../../../app/api/reviews/route.js'
 import type { NextRequest } from 'next/server.js'
 

@@ -1,4 +1,4 @@
-// File: C:\Users\varshitha-home\Desktop\last_hope\MovieInferno\app\api\chat\route.js
+// File: C:\Users\varshitha-home\Desktop\last_hope\MovieInferno\movieinferno-deploy-v6-fixes\app\api\chat\route.js
 import * as entry from '../../../../../app/api/chat/route.js'
 import type { NextRequest } from 'next/server.js'
 

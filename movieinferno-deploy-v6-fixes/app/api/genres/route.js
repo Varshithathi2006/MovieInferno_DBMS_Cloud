@@ -5,7 +5,7 @@ const API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY;
 
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.nextUrl);
     const type = searchParams.get('type') || 'movie'; // 'movie' or 'tv'
     
     // Check if API key is configured

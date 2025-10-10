@@ -1,4 +1,4 @@
-// File: C:\Users\varshitha-home\Desktop\last_hope\MovieInferno\app\signup\page.tsx
+// File: C:\Users\varshitha-home\Desktop\last_hope\MovieInferno\movieinferno-deploy-v6-fixes\app\signup\page.tsx
 import * as entry from '../../../../app/signup/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

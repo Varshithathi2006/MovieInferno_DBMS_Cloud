@@ -4,8 +4,8 @@ import { supabase } from '@/lib/supabaseClient';
 // GET - Fetch user's watchlist
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
+    const { searchParams } = new URL(request.nextUrl);
+    const userId = searchParams.get('userId');
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.nextUrl);
     const query = searchParams.get('query');
     const page = searchParams.get('page') || '1';
 

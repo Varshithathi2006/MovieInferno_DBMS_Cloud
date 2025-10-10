@@ -4,8 +4,8 @@ import { supabase } from '@/lib/supabaseClient';
 // GET - Fetch reviews for a movie
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const movieId = searchParams.get('movie_id');
+    const { searchParams } = new URL(request.nextUrl);
+    const movieId = searchParams.get('movieId');
 
     if (!movieId) {
       return NextResponse.json({ error: 'Movie ID is required' }, { status: 400 });

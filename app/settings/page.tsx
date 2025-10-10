@@ -9,19 +9,18 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   User, 
-  Bell, 
   Shield, 
-  Palette, 
   ArrowLeft, 
   Save, 
   Trash2,
   Eye,
-  EyeOff
+  EyeOff,
+  Heart,
+  AlertTriangle
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "@/hooks/use-toast"
@@ -30,37 +29,32 @@ interface UserProfile {
   id: string
   email: string
   username?: string
+  favorite_genre_id?: number
   created_at: string
 }
 
-interface UserSettings {
-  notifications: boolean
-  emailUpdates: boolean
-  publicProfile: boolean
-  autoplay: boolean
-  darkMode: boolean
+interface Genre {
+  id: number
+  name: string
 }
 
 export default function SettingsPage() {
   const [user, setUser] = useState<UserProfile | null>(null)
-  const [settings, setSettings] = useState<UserSettings>({
-    notifications: true,
-    emailUpdates: false,
-    publicProfile: true,
-    autoplay: true,
-    darkMode: false
-  })
+  const [genres, setGenres] = useState<Genre[]>([])
   const [username, setUsername] = useState("")
+  const [favoriteGenreId, setFavoriteGenreId] = useState<number | undefined>(undefined)
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPasswords, setShowPasswords] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     checkUser()
+    loadGenres()
   }, [])
 
   const checkUser = async () => {
@@ -91,6 +85,7 @@ export default function SettingsPage() {
 
       setUser(userData)
       setUsername(userData.username || "")
+      setFavoriteGenreId(userData.favorite_genre_id)
       
     } catch (err) {
       console.error('Error:', err)
@@ -104,6 +99,18 @@ export default function SettingsPage() {
     }
   }
 
+  const loadGenres = async () => {
+    try {
+      const response = await fetch('/api/genres?type=movie')
+      if (response.ok) {
+        const genresData = await response.json()
+        setGenres(genresData)
+      }
+    } catch (error) {
+      console.error('Error loading genres:', error)
+    }
+  }
+
   const handleSaveProfile = async () => {
     if (!user) return
     
@@ -111,7 +118,10 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ username })
+        .update({ 
+          username,
+          favorite_genre_id: favoriteGenreId 
+        })
         .eq('id', user.id)
 
       if (error) throw error
@@ -121,7 +131,7 @@ export default function SettingsPage() {
         description: "Profile updated successfully"
       })
       
-      setUser({ ...user, username })
+      setUser({ ...user, username, favorite_genre_id: favoriteGenreId })
     } catch (error) {
       console.error('Error updating profile:', error)
       toast({
@@ -182,21 +192,39 @@ export default function SettingsPage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+    if (!user) return
+    
+    const confirmText = "DELETE"
+    const userInput = prompt(
+      `This action cannot be undone. This will permanently delete your account and all associated data.\n\nType "${confirmText}" to confirm:`
+    )
+    
+    if (userInput !== confirmText) {
       return
     }
 
-    setSaving(true)
+    setDeleting(true)
     try {
-      // Note: In a real app, you'd want to handle this server-side
-      // This is a simplified version
-      const { error } = await supabase.auth.signOut()
+      // Delete user data from all related tables
+      const deletePromises = [
+        supabase.from('reviews').delete().eq('user_id', user.id),
+        supabase.from('watchlist').delete().eq('user_id', user.id),
+        supabase.from('chatbot_history').delete().eq('user_id', user.id),
+        supabase.from('users').delete().eq('id', user.id)
+      ]
+
+      await Promise.all(deletePromises)
+
+      // Delete from auth system
+      const { error: authError } = await supabase.auth.signOut()
       
-      if (error) throw error
+      if (authError) {
+        console.error('Error signing out:', authError)
+      }
 
       toast({
         title: "Account Deleted",
-        description: "Your account has been deleted successfully"
+        description: "Your account and all associated data have been permanently deleted"
       })
       
       router.push('/')
@@ -204,11 +232,11 @@ export default function SettingsPage() {
       console.error('Error deleting account:', error)
       toast({
         title: "Error",
-        description: "Failed to delete account",
+        description: "Failed to delete account. Please try again or contact support.",
         variant: "destructive"
       })
     } finally {
-      setSaving(false)
+      setDeleting(false)
     }
   }
 
@@ -261,9 +289,8 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
           </TabsList>
@@ -277,7 +304,7 @@ export default function SettingsPage() {
                   Profile Information
                 </CardTitle>
                 <CardDescription>
-                  Update your profile information and display preferences
+                  Update your profile information and preferences
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -291,7 +318,7 @@ export default function SettingsPage() {
                     className="bg-muted"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Email cannot be changed. Contact support if needed.
+                    Your email address is managed through your account settings
                   </p>
                 </div>
                 
@@ -304,6 +331,31 @@ export default function SettingsPage() {
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter your username"
                   />
+                  <p className="text-sm text-muted-foreground">
+                    This will be displayed in the navbar and chatbot
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="favorite-genre">Favorite Genre</Label>
+                  <Select 
+                    value={favoriteGenreId?.toString() || ""} 
+                    onValueChange={(value) => setFavoriteGenreId(value ? parseInt(value) : undefined)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your favorite genre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {genres.map((genre) => (
+                        <SelectItem key={genre.id} value={genre.id.toString()}>
+                          {genre.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Used for personalized recommendations and chatbot responses
+                  </p>
                 </div>
 
                 <Button onClick={handleSaveProfile} disabled={saving}>
@@ -314,98 +366,7 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* Preferences */}
-          <TabsContent value="preferences" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Palette className="w-5 h-5" />
-                  App Preferences
-                </CardTitle>
-                <CardDescription>
-                  Customize your MovieInferno experience
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Autoplay Trailers</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically play movie trailers when browsing
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.autoplay}
-                    onCheckedChange={(checked) => 
-                      setSettings({ ...settings, autoplay: checked })
-                    }
-                  />
-                </div>
 
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Public Profile</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow others to see your reviews and watchlist
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.publicProfile}
-                    onCheckedChange={(checked) => 
-                      setSettings({ ...settings, publicProfile: checked })
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Notifications
-                </CardTitle>
-                <CardDescription>
-                  Manage your notification preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications about new releases and updates
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.notifications}
-                    onCheckedChange={(checked) => 
-                      setSettings({ ...settings, notifications: checked })
-                    }
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive weekly email updates about trending movies
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.emailUpdates}
-                    onCheckedChange={(checked) => 
-                      setSettings({ ...settings, emailUpdates: checked })
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Security */}
           <TabsContent value="security" className="space-y-6">
@@ -483,27 +444,60 @@ export default function SettingsPage() {
           <TabsContent value="account" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-red-600">Danger Zone</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Account Information
+                </CardTitle>
                 <CardDescription>
-                  Irreversible actions that will affect your account
+                  View your account details and status
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="border border-red-200 rounded-lg p-4 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
-                  <h3 className="font-semibold text-red-800 dark:text-red-400 mb-2">
-                    Delete Account
-                  </h3>
-                  <p className="text-sm text-red-700 dark:text-red-300 mb-4">
-                    Once you delete your account, there is no going back. This will permanently 
-                    delete your profile, watchlist, reviews, and all associated data.
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Account Created</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Account Status</Label>
+                    <p className="text-sm text-green-600">Active</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-destructive">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="w-5 h-5" />
+                  Danger Zone
+                </CardTitle>
+                <CardDescription>
+                  Irreversible and destructive actions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+                  <h4 className="font-medium text-destructive mb-2">Delete Account</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Once you delete your account, there is no going back. This will permanently delete:
                   </p>
+                  <ul className="text-sm text-muted-foreground mb-4 list-disc list-inside space-y-1">
+                    <li>Your profile and username</li>
+                    <li>All your movie and TV show reviews</li>
+                    <li>Your complete watchlist</li>
+                    <li>Chat history with BingiBot</li>
+                    <li>All account preferences and settings</li>
+                  </ul>
                   <Button 
                     variant="destructive" 
                     onClick={handleDeleteAccount}
-                    disabled={saving}
+                    disabled={deleting}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {saving ? "Deleting..." : "Delete Account"}
+                    {deleting ? "Deleting Account..." : "Delete Account"}
                   </Button>
                 </div>
               </CardContent>

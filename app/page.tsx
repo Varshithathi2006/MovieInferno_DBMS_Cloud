@@ -8,7 +8,8 @@ import { MovieSlider } from "@/components/movie-slider"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { movieApi, type Movie } from "@/services/api"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Key } from "lucide-react"
+import { ExternalLink, Key, Heart } from "lucide-react"
+import { supabase } from "@/lib/supabaseClient"
 
 // ADDITION 1: Import the Chatbot Component
 import { Chatbot } from "@/components/Chatbot" 
@@ -45,12 +46,20 @@ export default function HomePage() {
   const [popularMovies, setPopularMovies] = useState<Movie[]>([])
   const [topRatedMovies, setTopRatedMovies] = useState<Movie[]>([])
   const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([])
+  const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([])
+  const [recommendationMessage, setRecommendationMessage] = useState<string>("")
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [sectionsLoading, setSectionsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false)
 
   useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+
     const fetchMovies = async () => {
       try {
         setLoading(true)
@@ -97,8 +106,28 @@ export default function HomePage() {
       }
     }
 
+    const fetchRecommendations = async (userId: string) => {
+      try {
+        const response = await fetch(`/api/recommendations?userId=${userId}`)
+        const data = await response.json()
+        
+        if (response.ok) {
+          setRecommendedMovies(data.movies || [])
+          setRecommendationMessage(data.message || "")
+        }
+      } catch (error) {
+        console.error('Error fetching recommendations:', error)
+      }
+    }
+
+    checkUser()
     fetchMovies()
-  }, [])
+    
+    // Fetch recommendations if user is authenticated
+    if (user?.id) {
+      fetchRecommendations(user.id)
+    }
+  }, [user?.id])
 
   if (loading) {
     return (
@@ -184,6 +213,21 @@ export default function HomePage() {
         {/* Movie Sections */}
         <div className="space-y-12 py-8">
           <MovieSlider title="Trending Now" movies={trendingMovies} />
+          
+          {/* Personalized Recommendations for authenticated users */}
+          {user && recommendedMovies.length > 0 && (
+            <div className="relative">
+              <div className="flex items-center gap-2 mb-6">
+                <Heart className="w-6 h-6 text-red-500" />
+                <h2 className="text-2xl font-bold text-foreground">Just for You</h2>
+              </div>
+              {recommendationMessage && (
+                <p className="text-muted-foreground mb-4">{recommendationMessage}</p>
+              )}
+              <MovieSlider title="" movies={recommendedMovies} />
+            </div>
+          )}
+          
           {sectionsLoading ? (
             <div className="space-y-12">
               <div className="flex items-center justify-center py-8">

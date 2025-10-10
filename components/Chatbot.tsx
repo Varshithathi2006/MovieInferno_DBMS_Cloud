@@ -1,8 +1,8 @@
 // components/Chatbot.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { MessageCircle, Send, User, Bot, AlertCircle } from 'lucide-react';
+import { MessageCircle, Send, User, Bot, AlertCircle, Sparkles, Zap, Star } from 'lucide-react';
 
 // --- Define the Message Interface ---
 interface Message {
@@ -24,6 +24,16 @@ export function Chatbot() {
     const [user, setUser] = useState<any>(null);
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom when new messages arrive
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, isTyping]);
 
     // Check authentication and load user profile
     useEffect(() => {
@@ -83,32 +93,102 @@ export function Chatbot() {
     const getPersonalizedWelcome = () => {
         if (!user) return "Please log in to get personalized movie recommendations!";
         
-        if (!userProfile) return "Welcome! I'm BingiBot, your personal movie companion.";
+        if (!userProfile) return "Hi! I'm BingiBot, your personal movie and TV companion. What are you in the mood to watch?";
 
-        const { watchlistCount, reviewCount } = userProfile;
+        const { watchlistCount, reviewCount, favoriteGenres } = userProfile;
         
-        if (watchlistCount === 0 && reviewCount === 0) {
-            return "Welcome to BingiBot! 🎬 I see you're new here. Tell me your mood and I'll recommend the perfect movie or TV show for you!";
+        if (watchlistCount === 0 && reviewCount === 0 && favoriteGenres.length === 0) {
+            return "Welcome to BingiBot! I'm here to help you discover amazing movies and TV shows tailored to your taste. Tell me about your favorite genres or what you're in the mood for!";
         }
         
-        if (watchlistCount > 0 && reviewCount > 0) {
-            return `Welcome back! 🎭 I see you have ${watchlistCount} items in your watchlist and ${reviewCount} reviews. Based on your taste, I can give you personalized recommendations!`;
+        let welcome = "Welcome back! 🎬 ";
+        
+        // More personalized greetings based on activity level
+        if (watchlistCount > 10 && reviewCount > 5) {
+            welcome += `I can see you're a true cinephile with **${watchlistCount} watchlist items** and **${reviewCount} reviews**! `;
+        } else if (watchlistCount > 0) {
+            welcome += `I see you have **${watchlistCount} items** in your watchlist. `;
         }
         
-        if (watchlistCount > 0) {
-            return `Hi there! 🍿 I noticed you have ${watchlistCount} items in your watchlist. I can recommend similar content or help you decide what to watch next!`;
+        if (reviewCount > 0) {
+            welcome += `Your **${reviewCount} thoughtful reviews** help me understand your taste better. `;
         }
         
-        return `Welcome! 🎪 I see you've reviewed ${reviewCount} movies. I can use your ratings to suggest content that matches your taste!`;
+        if (favoriteGenres.length > 0) {
+            const genreText = favoriteGenres.length > 2 
+                ? `**${favoriteGenres.slice(0, 2).join('**, **')}** and more` 
+                : `**${favoriteGenres.join('** and **')}**`;
+            welcome += `I know you enjoy ${genreText}, so I'm ready to suggest something perfect for your mood based on your viewing history!`;
+        } else {
+            welcome += "What kind of experience are you looking for today?";
+        }
+        
+        return welcome;
     };
 
-    const getSuggestedPrompts = () => [
-        "I'm feeling nostalgic, suggest something classic",
-        "I want something thrilling and suspenseful",
-        "Recommend a feel-good comedy",
-        "What should I watch based on my watchlist?",
-        "I'm in the mood for a romantic movie"
-    ];
+    const getSuggestedPrompts = () => {
+        if (!userProfile) return [
+            "Recommend something based on my mood",
+            "What's a hidden gem I should watch?",
+            "I want something uplifting and fun",
+            "Suggest a critically acclaimed film"
+        ];
+
+        const { favoriteGenres, watchlistCount, reviewCount } = userProfile;
+        const prompts = [];
+
+        // Genre-based prompts with enhanced personalization
+        if (favoriteGenres.length > 0) {
+            const primaryGenre = favoriteGenres[0].toLowerCase();
+            prompts.push(`Recommend a ${primaryGenre} movie I haven't seen yet`);
+            
+            if (favoriteGenres.length > 1) {
+                const secondaryGenre = favoriteGenres[1].toLowerCase();
+                prompts.push(`Something that blends ${primaryGenre} and ${secondaryGenre}`);
+            }
+            
+            // Add genre-specific mood prompts
+            if (favoriteGenres.length > 2) {
+                const tertiaryGenre = favoriteGenres[2].toLowerCase();
+                prompts.push(`Surprise me with a ${tertiaryGenre} hidden gem`);
+            }
+        }
+        
+        // Activity-based prompts with more context
+        if (watchlistCount > 10) {
+            prompts.push("Help me prioritize my extensive watchlist");
+        } else if (watchlistCount > 5) {
+            prompts.push("What should I watch next from my list?");
+        } else if (watchlistCount > 0) {
+            prompts.push("Help me decide what to watch from my saved items");
+        }
+        
+        // Experience-based prompts with review integration
+        if (reviewCount > 5) {
+            prompts.push("Based on my viewing patterns, what's perfect for tonight?");
+        } else if (reviewCount > 3) {
+            prompts.push("Considering my reviews, what would I love?");
+        }
+        
+        // Enhanced mood and discovery prompts
+        const moodPrompts = [
+            "I'm feeling nostalgic, suggest something classic",
+            "I want to discover an underrated masterpiece",
+            "Something perfect for a cozy weekend binge",
+            "I'm in the mood for something thought-provoking",
+            "Recommend something that will make me laugh out loud",
+            "I want an emotional, meaningful story that will stay with me",
+            "Suggest something trending that matches my taste",
+            "I'm looking for a comfort watch I can rewatch"
+        ];
+        
+        // Add mood prompts to fill remaining slots
+        const remainingSlots = Math.max(0, 4 - prompts.length);
+        const shuffledMoodPrompts = moodPrompts.sort(() => 0.5 - Math.random());
+        prompts.push(...shuffledMoodPrompts.slice(0, remainingSlots));
+        
+        return prompts.slice(0, 4);
+    };
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -181,44 +261,95 @@ export function Chatbot() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div className="relative">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary/20 border-t-primary"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <Bot className="h-6 w-6 text-primary animate-pulse" />
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg overflow-hidden">
-            {/* Header */}
-            <div className="bg-primary text-primary-foreground p-4 flex items-center gap-3">
-                <MessageCircle className="h-6 w-6" />
-                <div>
-                    <h2 className="text-lg font-semibold">BingiBot</h2>
-                    <p className="text-sm opacity-90">Your Personal Movie & TV Companion</p>
+        <div className="max-w-4xl mx-auto bg-gradient-to-br from-card via-card to-card/95 rounded-2xl shadow-2xl overflow-hidden border border-border/50 backdrop-blur-sm">
+            {/* Enhanced Header */}
+            <div className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-primary-foreground p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse"></div>
+                <div className="relative flex items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 bg-primary-foreground/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-primary-foreground/30">
+                            <Bot className="h-7 w-7 text-primary-foreground" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-primary animate-pulse"></div>
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-bold">BingiBot</h2>
+                            <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
+                        </div>
+                        <p className="text-sm opacity-90 flex items-center gap-1">
+                            <Zap className="h-3 w-3" />
+                            Your AI-Powered Movie & TV Companion
+                        </p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 text-xs bg-primary-foreground/10 px-3 py-1 rounded-full">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        Online
+                    </div>
                 </div>
             </div>
 
-            {/* Message Display Area */}
-            <div className="h-96 overflow-y-auto p-4 space-y-4 bg-background">
+            {/* Enhanced Message Display Area */}
+            <div className="h-[500px] overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-background/50 to-background relative">
+                {/* Background Pattern */}
+                <div className="absolute inset-0 opacity-5">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_50%)]"></div>
+                </div>
+                
                 {messages.length === 0 && (
-                    <div className="text-center space-y-4">
-                        <div className="bg-muted/50 rounded-lg p-6">
-                            <Bot className="h-12 w-12 mx-auto mb-3 text-primary" />
-                            <p className="text-muted-foreground mb-4">{getPersonalizedWelcome()}</p>
+                    <div className="text-center space-y-6 relative z-10">
+                        <div className="bg-gradient-to-br from-muted/80 to-muted/40 rounded-2xl p-8 backdrop-blur-sm border border-border/50">
+                            <div className="relative mb-6">
+                                <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
+                                    <Bot className="h-10 w-10 text-primary" />
+                                </div>
+                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
+                                    <Sparkles className="h-3 w-3 text-yellow-800" />
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-foreground">Welcome to BingiBot! 🎬</h3>
+                                <p className="text-muted-foreground leading-relaxed">{getPersonalizedWelcome()}</p>
+                            </div>
                             
                             {user && (
-                                <div className="space-y-2">
-                                    <p className="text-sm font-medium text-foreground">Try asking:</p>
-                                    <div className="flex flex-wrap gap-2 justify-center">
+                                <div className="space-y-4 mt-6">
+                                    <div className="flex items-center justify-center gap-2 text-sm font-medium text-foreground">
+                                        <Star className="h-4 w-4 text-yellow-500" />
+                                        Try these personalized suggestions:
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {getSuggestedPrompts().map((prompt, index) => (
                                             <button
                                                 key={index}
                                                 onClick={() => handleSuggestedPrompt(prompt)}
-                                                className="text-xs bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1 rounded-full transition-colors"
+                                                className="group text-sm bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/20 hover:to-primary/10 text-primary px-4 py-3 rounded-xl transition-all duration-300 text-left border border-primary/20 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 transform hover:-translate-y-0.5"
                                             >
-                                                {prompt}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 bg-primary rounded-full group-hover:animate-pulse"></div>
+                                                    {prompt}
+                                                </div>
                                             </button>
                                         ))}
                                     </div>
+                                    {userProfile && (userProfile.watchlistCount > 0 || userProfile.reviewCount > 0 || userProfile.favoriteGenres.length > 0) && (
+                                        <div className="text-xs text-muted-foreground text-center pt-4 border-t border-muted/50 flex items-center justify-center gap-2">
+                                            <Sparkles className="h-3 w-3 text-primary" />
+                                            These suggestions are personalized based on your viewing history
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -226,54 +357,73 @@ export function Chatbot() {
                 )}
                 
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={index} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-500`} style={{animationDelay: `${index * 100}ms`}}>
                         {msg.role !== 'user' && (
                             <div className="flex-shrink-0">
-                                {msg.role === 'error' ? (
-                                    <AlertCircle className="h-8 w-8 text-destructive" />
-                                ) : (
-                                    <Bot className="h-8 w-8 text-primary" />
-                                )}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                    msg.role === 'error' 
+                                        ? 'bg-destructive/20 border border-destructive/30' 
+                                        : 'bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30'
+                                }`}>
+                                    {msg.role === 'error' ? (
+                                        <AlertCircle className="h-5 w-5 text-destructive" />
+                                    ) : (
+                                        <Bot className="h-5 w-5 text-primary" />
+                                    )}
+                                </div>
                             </div>
                         )}
                         
-                        <div className={`max-w-[80%] rounded-lg p-4 ${
+                        <div className={`max-w-[85%] rounded-2xl p-4 relative ${
                             msg.role === 'user' 
-                                ? 'bg-primary text-primary-foreground ml-auto' 
+                                ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground ml-auto shadow-lg' 
                                 : msg.role === 'error'
-                                ? 'bg-destructive/10 text-destructive border border-destructive/20'
-                                : 'bg-muted text-foreground'
+                                ? 'bg-gradient-to-br from-destructive/10 to-destructive/5 text-destructive border border-destructive/20'
+                                : 'bg-gradient-to-br from-muted/80 to-muted/60 text-foreground border border-border/50 shadow-sm'
                         }`}>
-                            <div className="whitespace-pre-wrap leading-relaxed space-y-2">
+                            {/* Message bubble tail */}
+                            <div className={`absolute top-4 w-3 h-3 transform rotate-45 ${
+                                msg.role === 'user' 
+                                    ? 'bg-primary -right-1.5' 
+                                    : msg.role === 'error'
+                                    ? 'bg-destructive/10 -left-1.5 border-l border-t border-destructive/20'
+                                    : 'bg-muted/80 -left-1.5 border-l border-t border-border/50'
+                            }`}></div>
+                            
+                            <div className="whitespace-pre-wrap leading-relaxed space-y-3 relative z-10">
                                 {msg.content.split('\n').map((line, lineIndex) => {
-                                    // Handle bullet points
+                                    // Enhanced bullet points
                                     if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
                                         return (
-                                            <div key={lineIndex} className="flex items-start gap-2">
-                                                <span className="text-primary mt-1">•</span>
-                                                <span>{line.replace(/^[•\-]\s*/, '')}</span>
+                                            <div key={lineIndex} className="flex items-start gap-3 my-2">
+                                                <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center mt-0.5">
+                                                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                                                </div>
+                                                <span className="flex-1">{line.replace(/^[•\-]\s*/, '')}</span>
                                             </div>
                                         );
                                     }
-                                    // Handle numbered lists
+                                    // Enhanced numbered lists
                                     if (/^\d+\./.test(line.trim())) {
                                         return (
-                                            <div key={lineIndex} className="flex items-start gap-2">
-                                                <span className="text-primary font-medium">{line.match(/^\d+\./)?.[0]}</span>
-                                                <span>{line.replace(/^\d+\.\s*/, '')}</span>
+                                            <div key={lineIndex} className="flex items-start gap-3 my-2">
+                                                <div className="w-7 h-7 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold shadow-sm">
+                                                    {line.match(/^\d+/)?.[0]}
+                                                </div>
+                                                <span className="flex-1 pt-1">{line.replace(/^\d+\.\s*/, '')}</span>
                                             </div>
                                         );
                                     }
-                                    // Handle bold text (simple **text** format)
+                                    // Enhanced movie/TV titles
                                     if (line.includes('**')) {
                                         const parts = line.split(/(\*\*.*?\*\*)/);
                                         return (
-                                            <p key={lineIndex}>
+                                            <p key={lineIndex} className="leading-relaxed">
                                                 {parts.map((part, partIndex) => 
                                                     part.startsWith('**') && part.endsWith('**') ? (
-                                                        <strong key={partIndex} className="font-semibold">
+                                                        <span key={partIndex} className="font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
                                                             {part.slice(2, -2)}
-                                                        </strong>
+                                                        </span>
                                                     ) : (
                                                         <span key={partIndex}>{part}</span>
                                                     )
@@ -281,12 +431,36 @@ export function Chatbot() {
                                             </p>
                                         );
                                     }
-                                    // Regular lines
-                                    return line.trim() ? <p key={lineIndex}>{line}</p> : <br key={lineIndex} />;
+                                    // Handle year mentions with special styling
+                                    if (/\(\d{4}\)/.test(line)) {
+                                        const yearFormatted = line.replace(/\((\d{4})\)/g, '<span class="text-muted-foreground text-sm bg-muted/50 px-1 rounded">($1)</span>');
+                                        return (
+                                            <p key={lineIndex} dangerouslySetInnerHTML={{ __html: yearFormatted }} />
+                                        );
+                                    }
+                                    // Handle ratings with special styling
+                                    if (/(\d+\.?\d*\/10|\d+\.?\d*%)/.test(line)) {
+                                        const ratingFormatted = line.replace(/(\d+\.?\d*\/10|\d+\.?\d*%)/g, '<span class="font-medium text-green-600 bg-green-50 px-1 rounded">⭐ $1</span>');
+                                        return (
+                                            <p key={lineIndex} dangerouslySetInnerHTML={{ __html: ratingFormatted }} />
+                                        );
+                                    }
+                                    // Regular lines with emoji enhancement
+                                    const enhancedLine = line
+                                        .replace(/🎬/g, '<span class="text-lg">🎬</span>')
+                                        .replace(/🍿/g, '<span class="text-lg">🍿</span>')
+                                        .replace(/📺/g, '<span class="text-lg">📺</span>');
+                                    
+                                    return line.trim() ? (
+                                        enhancedLine !== line ? 
+                                            <p key={lineIndex} dangerouslySetInnerHTML={{ __html: enhancedLine }} /> :
+                                            <p key={lineIndex}>{line}</p>
+                                    ) : <br key={lineIndex} />;
                                 })}
                             </div>
                             {msg.timestamp && (
-                                <p className="text-xs opacity-70 mt-1">
+                                <p className="text-xs opacity-60 mt-3 flex items-center gap-1">
+                                    <div className="w-1 h-1 bg-current rounded-full"></div>
                                     {msg.timestamp.toLocaleTimeString()}
                                 </p>
                             )}
@@ -294,46 +468,71 @@ export function Chatbot() {
                         
                         {msg.role === 'user' && (
                             <div className="flex-shrink-0">
-                                <User className="h-8 w-8 text-muted-foreground" />
+                                <div className="w-10 h-10 bg-gradient-to-br from-muted to-muted/80 rounded-full flex items-center justify-center border border-border/50">
+                                    <User className="h-5 w-5 text-muted-foreground" />
+                                </div>
                             </div>
                         )}
                     </div>
                 ))}
                 
                 {isTyping && (
-                    <div className="flex gap-3 justify-start">
-                        <Bot className="h-8 w-8 text-primary flex-shrink-0" />
-                        <div className="bg-muted rounded-lg p-3">
-                            <div className="flex space-x-1">
-                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="flex gap-4 justify-start animate-in slide-in-from-bottom-2 duration-300">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center border border-primary/30">
+                            <Bot className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="bg-gradient-to-br from-muted/80 to-muted/60 rounded-2xl p-4 border border-border/50 relative">
+                            <div className="absolute top-4 w-3 h-3 bg-muted/80 transform rotate-45 -left-1.5 border-l border-t border-border/50"></div>
+                            <div className="flex space-x-2 items-center">
+                                <div className="flex space-x-1">
+                                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                </div>
+                                <span className="text-xs text-muted-foreground ml-2">BingiBot is thinking...</span>
                             </div>
                         </div>
                     </div>
                 )}
+                
+                <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Form */}
-            <div className="border-t bg-muted/30 p-4">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder={user ? "Ask me about movies, TV shows, or your mood..." : "Please log in to chat"}
-                        disabled={isTyping || !user}
-                        className="flex-1 px-4 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-                    />
+            {/* Enhanced Input Form */}
+            <div className="border-t bg-gradient-to-r from-muted/30 via-muted/20 to-muted/30 p-6 backdrop-blur-sm">
+                <form onSubmit={handleSendMessage} className="flex gap-3">
+                    <div className="flex-1 relative">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder={user ? "Ask me about movies, TV shows, or describe your mood..." : "Please log in to chat with BingiBot"}
+                            disabled={isTyping || !user}
+                            className="w-full px-6 py-4 border border-input bg-background/80 backdrop-blur-sm rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 disabled:opacity-50 placeholder:text-muted-foreground/70 transition-all duration-300 shadow-sm hover:shadow-md"
+                        />
+                        {input && (
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                            </div>
+                        )}
+                    </div>
                     <button 
                         type="submit" 
                         disabled={isTyping || !input.trim() || !user}
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                        className="px-6 py-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-2xl hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-3 min-w-[120px] shadow-lg hover:shadow-xl hover:shadow-primary/20 transform hover:-translate-y-0.5 active:translate-y-0"
                     >
-                        <Send className="h-4 w-4" />
-                        Send
+                        <Send className="h-5 w-5" />
+                        <span className="font-medium">{isTyping ? 'Sending...' : 'Send'}</span>
                     </button>
                 </form>
+                
+                {!user && (
+                    <div className="mt-4 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            Please <span className="text-primary font-medium">log in</span> to start chatting with BingiBot
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

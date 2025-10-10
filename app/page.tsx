@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabaseClient"
 // ADDITION 1: Import the Chatbot Component
 import { Chatbot } from "@/components/Chatbot" 
 import { FloatingChatbot } from "@/components/floating-chatbot"
+import { AwardsSection } from "@/components/AwardsSection"
 // ----------------------------------------
 
 // TEMPORARY: Import debug component for testing
@@ -244,11 +245,24 @@ export default function HomePage() {
           )}
         </div>
         
+        {/* Awards Section */}
+        <section className="py-16 bg-gradient-to-br from-background via-muted/10 to-background">
+          <div className="container mx-auto px-4">
+            <AwardsSection 
+              limit={12}
+              showSearch={true}
+              showFilters={true}
+              title="Movie Awards & Recognition"
+            />
+          </div>
+        </section>
+
         {/* ADDITION 2: Chatbot Integration */}
-        <div className="py-12 max-w-lg mx-auto">
-            <h2 className="text-3xl font-bold text-foreground mb-6 text-center">Ask BingiBot (AI)</h2>
-            <Chatbot /> 
-        </div>
+        <section className="py-16 bg-gradient-to-br from-muted/30 via-background to-muted/20">
+          <div className="container mx-auto px-4">
+            <Chatbot />
+          </div>
+        </section>
         {/* ----------------------------- */}
 
       </main>

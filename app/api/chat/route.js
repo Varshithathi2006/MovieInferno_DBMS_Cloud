@@ -159,7 +159,7 @@ export async function POST(request) {
         }
 
         // Get user profile for recommendations
-        const userProfile = await recommendationService.getUserProfile(userId);
+        const userRecommendationProfile = await recommendationService.getUserProfile(userId);
         
         // Detect if user is asking for recommendations and provide specific suggestions
         let specificRecommendations = '';
@@ -172,24 +172,24 @@ export async function POST(request) {
             
             // Mood-based recommendations
             if (messageText.includes('happy') || messageText.includes('uplifting') || messageText.includes('fun')) {
-                recommendations = await recommendationService.getMoodRecommendations('happy', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('happy', userRecommendationProfile, 3);
             } else if (messageText.includes('sad') || messageText.includes('emotional') || messageText.includes('cry')) {
-                recommendations = await recommendationService.getMoodRecommendations('sad', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('sad', userRecommendationProfile, 3);
             } else if (messageText.includes('stressed') || messageText.includes('relax') || messageText.includes('calm')) {
-                recommendations = await recommendationService.getMoodRecommendations('stressed', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('stressed', userRecommendationProfile, 3);
             } else if (messageText.includes('bored') || messageText.includes('exciting') || messageText.includes('action')) {
-                recommendations = await recommendationService.getMoodRecommendations('bored', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('bored', userRecommendationProfile, 3);
             } else if (messageText.includes('romantic') || messageText.includes('love') || messageText.includes('date')) {
-                recommendations = await recommendationService.getMoodRecommendations('romantic', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('romantic', userRecommendationProfile, 3);
             } else if (messageText.includes('adventure') || messageText.includes('epic')) {
-                recommendations = await recommendationService.getMoodRecommendations('adventurous', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('adventurous', userRecommendationProfile, 3);
             } else if (messageText.includes('nostalgic') || messageText.includes('classic') || messageText.includes('old')) {
-                recommendations = await recommendationService.getMoodRecommendations('nostalgic', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('nostalgic', userRecommendationProfile, 3);
             } else if (messageText.includes('thoughtful') || messageText.includes('deep') || messageText.includes('meaningful')) {
-                recommendations = await recommendationService.getMoodRecommendations('thoughtful', userProfile, 3);
+                recommendations = await recommendationService.getMoodRecommendations('thoughtful', userRecommendationProfile, 3);
             } else {
                 // General recommendations based on user profile
-                recommendations = await recommendationService.getSimilarRecommendations(userProfile, 3);
+                recommendations = await recommendationService.getSimilarRecommendations(userRecommendationProfile, 3);
             }
             
             if (recommendations && recommendations.length > 0) {
